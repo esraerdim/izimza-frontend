@@ -9,6 +9,18 @@ const isUploaded = ref(false)
 const uploadMessage = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
+const uploadTotalMb = ref(0)
+const uploadProgressMb = ref(0)
+const uploadProgressPercent = ref(0)
+let uploadTimer: number | null = null
+const SIMULATED_UPLOAD_DURATION_MS = 5000
+
+const stopUploadTimer = () => {
+  if (uploadTimer !== null) {
+    window.clearInterval(uploadTimer)
+    uploadTimer = null
+  }
+}
 
 const openFilePicker = () => {
   fileInputRef.value?.click()
@@ -42,9 +54,13 @@ const onFileSelected = (event: Event) => {
 }
 
 const uploadFile = async (file: File) => {
+  stopUploadTimer()
   selectedFile.value = file
   uploadMessage.value = ''
   const fileSizeMb = Number((file.size / (1024 * 1024)).toFixed(2))
+  uploadTotalMb.value = fileSizeMb
+  uploadProgressMb.value = 0
+  uploadProgressPercent.value = 0
   if (fileSizeMb > 50) {
     uploadMessage.value = 'Dosya boyutu 50 MB limitini asamaz.'
     selectedFile.value = null
@@ -52,12 +68,22 @@ const uploadFile = async (file: File) => {
     return
   }
 
+  isUploaded.value = false
   isUploading.value = true
-  window.setTimeout(() => {
-    isUploading.value = false
-    isUploaded.value = true
-    uploadMessage.value = 'Yüklendi · Damgalamaya hazır'
-  }, 900)
+  const startedAt = Date.now()
+  uploadTimer = window.setInterval(() => {
+    const elapsedMs = Date.now() - startedAt
+    const progressRatio = Math.min(1, elapsedMs / SIMULATED_UPLOAD_DURATION_MS)
+    uploadProgressPercent.value = Math.round(progressRatio * 100)
+    uploadProgressMb.value = Number((uploadTotalMb.value * progressRatio).toFixed(2))
+
+    if (progressRatio >= 1) {
+      stopUploadTimer()
+      isUploading.value = false
+      isUploaded.value = true
+      uploadMessage.value = 'Yüklendi · Damgalamaya hazır'
+    }
+  }, 100)
 }
 
 const handleTimestamp = async () => {
@@ -88,10 +114,10 @@ const handleTimestamp = async () => {
     <h1 class="timestamp-title">Zaman Damgala</h1>
     <p class="timestamp-sub">RFC 3161 uyumlu nitelikli zaman damgası ile dosyalarına resmi tarih ekle.</p>
 
-    <div class="stamp-stage">
+    <div class="stamp-stage" :class="{ 'has-file': !!selectedFile }">
       <section
-        class="drop drop-large pulse"
-        :class="{ 'is-dragover': isDragOver }"
+        class="drop drop-large"
+        :class="{ pulse: !!selectedFile, 'is-dragover': isDragOver }"
         role="button"
         tabindex="0"
         @dragover="onDragOver"
@@ -140,11 +166,17 @@ const handleTimestamp = async () => {
         <p class="stamp-file-state" :class="{ ready: isUploaded && !isStamping }">
           {{ isStamping ? 'Damgalanıyor...' : uploadMessage || 'Yükleniyor...' }}
         </p>
+        <div v-if="isUploading || isUploaded" class="stamp-upload-progress">
+          <div class="stamp-upload-progress-head">
+            <span>{{ uploadProgressMb.toFixed(1) }} MB / {{ uploadTotalMb.toFixed(1) }} MB</span>
+            <strong>%{{ uploadProgressPercent }}</strong>
+          </div>
+          <div class="stamp-upload-progress-track">
+            <span :style="{ width: `${uploadProgressPercent}%` }"></span>
+          </div>
+        </div>
       </aside>
 
-      <aside class="stamp-preview-card stamp-preview-empty" v-else>
-        <p>Sayfayı Temizle</p>
-      </aside>
     </div>
 
     <div class="stamp-action-bar" v-if="isUploaded && selectedFile">
