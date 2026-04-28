@@ -1,4 +1,8 @@
 export { default as BaseButton } from './atoms/BaseButton.vue'
 export { default as BaseInput } from './atoms/BaseInput.vue'
 export { default as NavIcon } from './atoms/NavIcon.vue'
+export { default as WaveEmoji } from './atoms/WaveEmoji.vue'
 export { default as FormField } from './molecules/FormField.vue'
+export { default as StatsCard } from './molecules/StatsCard.vue'
+export { default as ActionChip } from './molecules/ActionChip.vue'
+export { default as TimelineItem } from './molecules/TimelineItem.vue'

@@ -1,7 +1,15 @@
+<script setup lang="ts">
+import DashboardWelcome from '../../widgets/organisms/dashboard/DashboardWelcome.vue'
+import DashboardStatsGrid from '../../widgets/organisms/dashboard/DashboardStatsGrid.vue'
+import DashboardSecondRow from '../../widgets/organisms/dashboard/DashboardSecondRow.vue'
+import DashboardRecentArchives from '../../widgets/organisms/dashboard/DashboardRecentArchives.vue'
+</script>
+
 <template>
   <section class="page">
-    <p class="eyebrow">Anasayfa</p>
-    <h2>Dashboard</h2>
-    <p class="description">Kartlar, aktivite listesi ve son arşivlenen belgeler burada olacak.</p>
+    <DashboardWelcome />
+    <DashboardStatsGrid />
+    <DashboardSecondRow />
+    <DashboardRecentArchives />
   </section>
 </template>

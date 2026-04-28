@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type NavIconName = 'home' | 'clock' | 'archive'
+type NavIconName = 'home' | 'sign' | 'clock' | 'archive'
 
 export type { NavIconName }
 
@@ -23,6 +23,21 @@ defineProps<{
     <path d="M3 11l9-8 9 8"></path>
     <path d="M5 9v11h14V9"></path>
     <path d="M10 20v-6h4v6"></path>
+  </svg>
+
+  <svg
+    v-else-if="name === 'sign'"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    width="18"
+    height="18"
+  >
+    <path d="M14 4l6 6-11 11H3v-6z"></path>
+    <path d="M13 5l6 6"></path>
   </svg>
 
   <svg

@@ -6,9 +6,13 @@ import { useAuthStore } from '../../features/auth'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const emit = defineEmits<{
+  (event: 'toggle-menu'): void
+}>()
 
 const routeLabelMap: Record<string, string> = {
   dashboard: 'Anasayfa',
+  sign: 'İmzala',
   timestamp: 'Zaman Damgala',
   archive: 'Arşiv',
   profile: 'Profil',
@@ -29,6 +33,14 @@ const handleLogout = async () => {
 
 <template>
   <header class="topbar">
+    <button class="topbar-menu-btn" type="button" @click="emit('toggle-menu')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+        <path d="M3 6h18"></path>
+        <path d="M3 12h18"></path>
+        <path d="M3 18h18"></path>
+      </svg>
+    </button>
+
     <div class="crumbs">
       <span class="crumb-sub">Çalışma alanın</span>
       <span class="crumb-sep">/</span>

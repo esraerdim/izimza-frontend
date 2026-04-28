@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { NavIcon } from '../../shared/ui'
 import type { NavIconName } from '../../shared/ui/atoms/NavIcon.vue'
+const emit = defineEmits<{
+  (event: 'navigate'): void
+}>()
 
 const navItems: { name: string; label: string; to: string; icon: NavIconName }[] = [
   { name: 'dashboard', label: 'Anasayfa', to: '/', icon: 'home' },
+  { name: 'sign', label: 'İmzala', to: '/sign', icon: 'sign' },
   { name: 'timestamp', label: 'Zaman Damgala', to: '/timestamp', icon: 'clock' },
   { name: 'archive', label: 'Arşiv', to: '/archive', icon: 'archive' },
 ]
@@ -22,6 +26,7 @@ const navItems: { name: string; label: string; to: string; icon: NavIconName }[]
         :to="item.to"
         class="nav-item"
         exact-active-class="active"
+        @click="emit('navigate')"
       >
         <span class="nav-icon" aria-hidden="true">
           <NavIcon :name="item.icon" />

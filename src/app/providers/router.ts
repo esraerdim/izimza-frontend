@@ -19,6 +19,11 @@ const routes = [
         component: () => import('../../pages/dashboard/DashboardPage.vue'),
       },
       {
+        path: 'sign',
+        name: 'sign',
+        component: () => import('../../pages/sign/SignPage.vue'),
+      },
+      {
         path: 'timestamp',
         name: 'timestamp',
         component: () => import('../../pages/timestamp/TimestampPage.vue'),

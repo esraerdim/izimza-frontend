@@ -17,6 +17,21 @@
   },
   "activities": [
     {
+      "id": 4,
+      "title": "ai_report_2026-04-06.pdf yuklendi",
+      "createdAt": "2026-04-28T11:04:30.724Z"
+    },
+    {
+      "id": 3,
+      "title": "ai_report_2026-03-24 (3).pdf yuklendi",
+      "createdAt": "2026-04-28T10:58:25.067Z"
+    },
+    {
+      "id": 2,
+      "title": "ai_report_2026-03-24 (1).pdf yuklendi",
+      "createdAt": "2026-04-28T10:54:12.908Z"
+    },
+    {
       "id": 1,
       "title": "AI Raporu zaman damgalandi",
       "createdAt": "2026-04-27T20:29:00Z"
@@ -24,11 +39,60 @@
   ],
   "documents": [
     {
+      "id": 7,
+      "name": "ai_report_2026-04-06.pdf",
+      "sizeMb": 28.57,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T11:04:30.724Z",
+      "previewUrl": "/mock-files/1777374270640-ai_report_2026-04-06.pdf"
+    },
+    {
+      "id": 6,
+      "name": "ai_report_2026-03-24 (3).pdf",
+      "sizeMb": 38.33,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T10:58:25.067Z",
+      "previewUrl": "/mock-files/README.txt"
+    },
+    {
+      "id": 5,
+      "name": "ai_report_2026-03-24 (1).pdf",
+      "sizeMb": 0.05,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T10:54:12.908Z",
+      "previewUrl": "/mock-files/README.txt"
+    },
+    {
+      "id": 4,
+      "name": "teklif-metin-v4.pdf",
+      "sizeMb": 1.8,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T08:55:00Z",
+      "previewUrl": "/mock-files/README.txt"
+    },
+    {
+      "id": 3,
+      "name": "sozlesme-ek-a.pdf",
+      "sizeMb": 2.4,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T08:40:00Z",
+      "previewUrl": "/mock-files/README.txt"
+    },
+    {
+      "id": 2,
+      "name": "fatura-onay.pdf",
+      "sizeMb": 0.9,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T08:15:00Z",
+      "previewUrl": "/mock-files/README.txt"
+    },
+    {
       "id": 1,
       "name": "ai_report_2026-03-24(3).pdf",
       "sizeMb": 38.33,
       "action": "timestamped",
-      "createdAt": "2026-04-27T16:58:00Z"
+      "createdAt": "2026-04-27T16:58:00Z",
+      "previewUrl": "/mock-files/README.txt"
     }
   ]
 }

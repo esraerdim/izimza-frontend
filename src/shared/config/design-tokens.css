@@ -11,12 +11,16 @@
   --color-text-muted: #757792;
   --color-surface-page: #f7f8fc;
   --color-surface-card: #ffffff;
+  --bg: #f7f8fc;
   --color-border-default: #e5e7f0;
   --color-border-soft: #e9e9f3;
   --color-border-input: #dfe2ef;
   --color-brand-primary: #5a57ff;
   --color-brand-secondary: #7a57f8;
   --color-danger: #d6336c;
+  --ink: #0f172a;
+  --ink-3: #64748b;
+  --brand: #6366f1;
 
   --radius-sm: 10px;
   --radius-md: 12px;
@@ -30,4 +34,6 @@
   --space-6: 20px;
   --space-7: 24px;
   --space-8: 32px;
+
+  --shadow-md: 0 6px 24px -8px rgba(20, 30, 40, 0.08), 0 2px 6px rgba(20, 30, 40, 0.04);
 }
