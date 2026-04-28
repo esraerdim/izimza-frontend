@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "demo@izimza.com",
+      "password": "Demo123!",
+      "firstName": "Esra",
+      "lastName": "Erdim",
+      "phone": "0(538) 659-6970"
+    }
+  ],
+  "dashboardStats": {
+    "totalSigned": 24,
+    "totalTimestamped": 17,
+    "remainingCredits": 9,
+    "archiveUsageMb": 271
+  },
+  "activities": [
+    {
+      "id": 1,
+      "title": "AI Raporu zaman damgalandi",
+      "createdAt": "2026-04-27T20:29:00Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": 1,
+      "name": "ai_report_2026-03-24(3).pdf",
+      "sizeMb": 38.33,
+      "action": "timestamped",
+      "createdAt": "2026-04-27T16:58:00Z"
+    }
+  ]
+}
