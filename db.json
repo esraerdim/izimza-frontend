@@ -11,11 +11,86 @@
   ],
   "dashboardStats": {
     "totalSigned": 24,
-    "totalTimestamped": 19,
-    "remainingCredits": 7,
+    "totalTimestamped": 24,
+    "remainingCredits": 2,
     "archiveUsageMb": 271
   },
   "activities": [
+    {
+      "id": 21,
+      "title": "Certificato-uExfTP.pdf zaman damgalandi",
+      "createdAt": "2026-04-28T12:18:39.683Z"
+    },
+    {
+      "id": 20,
+      "title": "Certificato-uExfTP.pdf yuklendi",
+      "createdAt": "2026-04-28T12:18:37.865Z"
+    },
+    {
+      "id": 19,
+      "title": "ai_report_2026-03-25 (1).pdf zaman damgalandi",
+      "createdAt": "2026-04-28T12:17:52.102Z"
+    },
+    {
+      "id": 18,
+      "title": "ai_report_2026-03-25 (1).pdf yuklendi",
+      "createdAt": "2026-04-28T12:17:50.609Z"
+    },
+    {
+      "id": 17,
+      "title": "ai_report_2026-03-25 (1).pdf zaman damgalandi",
+      "createdAt": "2026-04-28T12:09:53.487Z"
+    },
+    {
+      "id": 16,
+      "title": "ai_report_2026-03-25 (1).pdf yuklendi",
+      "createdAt": "2026-04-28T12:09:51.791Z"
+    },
+    {
+      "id": 15,
+      "title": "ai_report_2026-04-06 (1).pdf zaman damgalandi",
+      "createdAt": "2026-04-28T12:07:19.170Z"
+    },
+    {
+      "id": 14,
+      "title": "ai_report_2026-04-06 (1).pdf yuklendi",
+      "createdAt": "2026-04-28T12:07:15.185Z"
+    },
+    {
+      "id": 13,
+      "title": "doc03950920250113100426_converted_rotated.pdf zaman damgalandi",
+      "createdAt": "2026-04-28T12:04:49.428Z"
+    },
+    {
+      "id": 12,
+      "title": "doc03950920250113100426_converted_rotated.pdf yuklendi",
+      "createdAt": "2026-04-28T12:03:27.803Z"
+    },
+    {
+      "id": 11,
+      "title": "ai_report_2026-03-24 (2).pdf yuklendi",
+      "createdAt": "2026-04-28T11:58:33.113Z"
+    },
+    {
+      "id": 10,
+      "title": "carta identita.pdf silindi",
+      "createdAt": "2026-04-28T11:58:14.248Z"
+    },
+    {
+      "id": 9,
+      "title": "carta identita.pdf yuklendi",
+      "createdAt": "2026-04-28T11:58:10.396Z"
+    },
+    {
+      "id": 8,
+      "title": "Certificato-MwTUSn.pdf yuklendi",
+      "createdAt": "2026-04-28T11:56:32.071Z"
+    },
+    {
+      "id": 7,
+      "title": "ai_report_2026-04-06.pdf yuklendi",
+      "createdAt": "2026-04-28T11:55:28.762Z"
+    },
     {
       "id": 6,
       "title": "ai_report_2026-03-24.pdf zaman damgalandi",
@@ -48,6 +123,70 @@
     }
   ],
   "documents": [
+    {
+      "id": 17,
+      "name": "Certificato-uExfTP.pdf",
+      "sizeMb": 0.06,
+      "action": "timestamped",
+      "createdAt": "2026-04-28T12:18:39.683Z",
+      "previewUrl": "/mock-files/1777378717861-Certificato-uExfTP.pdf"
+    },
+    {
+      "id": 16,
+      "name": "ai_report_2026-03-25 (1).pdf",
+      "sizeMb": 29.2,
+      "action": "timestamped",
+      "createdAt": "2026-04-28T12:17:52.102Z",
+      "previewUrl": "/mock-files/1777378670506-ai_report_2026-03-25-1.pdf"
+    },
+    {
+      "id": 15,
+      "name": "ai_report_2026-03-25 (1).pdf",
+      "sizeMb": 29.2,
+      "action": "timestamped",
+      "createdAt": "2026-04-28T12:09:53.487Z",
+      "previewUrl": "/mock-files/1777378191720-ai_report_2026-03-25-1.pdf"
+    },
+    {
+      "id": 14,
+      "name": "ai_report_2026-04-06 (1).pdf",
+      "sizeMb": 28.57,
+      "action": "timestamped",
+      "createdAt": "2026-04-28T12:07:19.170Z",
+      "previewUrl": "/mock-files/1777378035105-ai_report_2026-04-06-1.pdf"
+    },
+    {
+      "id": 13,
+      "name": "doc03950920250113100426_converted_rotated.pdf",
+      "sizeMb": 0.45,
+      "action": "timestamped",
+      "createdAt": "2026-04-28T12:04:49.428Z",
+      "previewUrl": "/mock-files/1777377807799-doc03950920250113100426_converted_rotated.pdf"
+    },
+    {
+      "id": 12,
+      "name": "ai_report_2026-03-24 (2).pdf",
+      "sizeMb": 28.88,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T11:58:33.113Z",
+      "previewUrl": "/mock-files/1777377512968-ai_report_2026-03-24-2.pdf"
+    },
+    {
+      "id": 11,
+      "name": "Certificato-MwTUSn.pdf",
+      "sizeMb": 0.06,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T11:56:32.071Z",
+      "previewUrl": "/mock-files/1777377392067-Certificato-MwTUSn.pdf"
+    },
+    {
+      "id": 10,
+      "name": "ai_report_2026-04-06.pdf",
+      "sizeMb": 28.57,
+      "action": "uploaded",
+      "createdAt": "2026-04-28T11:55:28.762Z",
+      "previewUrl": "/mock-files/1777377328681-ai_report_2026-04-06.pdf"
+    },
     {
       "id": 9,
       "name": "ai_report_2026-03-24.pdf",

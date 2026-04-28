@@ -31,8 +31,7 @@ type UploadDocumentPayload = {
 }
 
 type TimestampUploadPayload = {
-  fileName: string
-  fileSizeMb: number
+  file: File
 }
 
 export const dashboardApi = {
@@ -48,6 +47,11 @@ export const dashboardApi = {
 
   async getRecentDocuments(): Promise<DashboardDocument[]> {
     const { data } = await http.get<DashboardDocument[]>('/api/documents/recent')
+    return data
+  },
+
+  async getAllDocuments(): Promise<DashboardDocument[]> {
+    const { data } = await http.get<DashboardDocument[]>('/documents')
     return data
   },
 
@@ -68,7 +72,14 @@ export const dashboardApi = {
   },
 
   async uploadTimestamp(payload: TimestampUploadPayload): Promise<DashboardDocument> {
-    const { data } = await http.post<{ document: DashboardDocument }>('/api/timestamp/upload', payload)
+    const formData = new FormData()
+    formData.append('file', payload.file)
+    const { data } = await http.post<{ document: DashboardDocument }>('/api/timestamp/upload', formData)
+    return data.document
+  },
+
+  async markDocumentTimestamped(documentId: number): Promise<DashboardDocument> {
+    const { data } = await http.patch<{ document: DashboardDocument }>(`/api/documents/${documentId}/timestamp`)
     return data.document
   },
 }

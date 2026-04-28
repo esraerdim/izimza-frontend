@@ -136,6 +136,59 @@ const createUploadedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
   return document
 }
 
+const createTimestampedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
+  const db = readDb()
+  const nextDocId = db.documents.length ? Math.max(...db.documents.map((d) => d.id)) + 1 : 1
+  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
+  const createdAt = new Date().toISOString()
+
+  const document = {
+    id: nextDocId,
+    name: fileName,
+    sizeMb: Number(fileSizeMb),
+    action: 'timestamped',
+    createdAt,
+    previewUrl,
+  }
+
+  db.documents.unshift(document)
+  db.activities.unshift({
+    id: nextActivityId,
+    title: `${fileName} zaman damgalandi`,
+    createdAt,
+  })
+  db.dashboardStats.totalTimestamped += 1
+  db.dashboardStats.remainingCredits = Math.max(0, db.dashboardStats.remainingCredits - 1)
+  writeDb(db)
+
+  return document
+}
+
+const markDocumentAsTimestamped = (documentId) => {
+  const db = readDb()
+  const documentIndex = db.documents.findIndex((item) => item.id === documentId)
+  if (documentIndex === -1) return null
+
+  const existing = db.documents[documentIndex]
+  db.documents[documentIndex] = {
+    ...existing,
+    action: 'timestamped',
+    createdAt: new Date().toISOString(),
+  }
+
+  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
+  db.activities.unshift({
+    id: nextActivityId,
+    title: `${existing.name} zaman damgalandi`,
+    createdAt: db.documents[documentIndex].createdAt,
+  })
+  db.dashboardStats.totalTimestamped += 1
+  db.dashboardStats.remainingCredits = Math.max(0, db.dashboardStats.remainingCredits - 1)
+  writeDb(db)
+
+  return db.documents[documentIndex]
+}
+
 const deleteDocumentById = (documentId) => {
   const db = readDb()
   const existingDoc = db.documents.find((item) => item.id === documentId)
@@ -327,38 +380,61 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { message: 'Belge silindi.' })
   }
 
+  if (req.method === 'PATCH' && /^\/api\/documents\/\d+\/timestamp$/.test(req.path)) {
+    const userId = requireAuth(req, res)
+    if (!userId) return
+
+    const documentId = Number(req.path.split('/')[3])
+    const document = markDocumentAsTimestamped(documentId)
+    if (!document) {
+      return sendJson(res, 404, { message: 'Belge bulunamadi.' })
+    }
+
+    return sendJson(res, 200, { message: 'Belge zaman damgalandi.', document })
+  }
+
   if (req.method === 'POST' && req.path === '/api/timestamp/upload') {
     const userId = requireAuth(req, res)
     if (!userId) return
+
+    if (req.headers['content-type']?.includes('multipart/form-data')) {
+      return upload.single('file')(req, res, (error) => {
+        if (error) {
+          if (error.code === 'LIMIT_FILE_SIZE') {
+            return sendJson(res, 413, { message: 'Dosya boyutu 50 MB limitini asamaz.' })
+          }
+          return sendJson(res, 400, { message: 'Dosya yukleme formati gecersiz.' })
+        }
+
+        if (!req.file) {
+          return sendJson(res, 400, { message: 'file alani zorunludur.' })
+        }
+
+        const uploadedFileSizeMb = Number((req.file.size / (1024 * 1024)).toFixed(2))
+        const previewUrl = `/mock-files/${req.file.filename}`
+        const document = createTimestampedDocument({
+          fileName: req.file.originalname,
+          fileSizeMb: uploadedFileSizeMb,
+          previewUrl,
+        })
+
+        return sendJson(res, 201, {
+          message: 'Zaman damgalama tamamlandi.',
+          document,
+        })
+      })
+    }
 
     const { fileName, fileSizeMb } = req.body ?? {}
     if (!fileName || !fileSizeMb) {
       return sendJson(res, 400, { message: 'fileName ve fileSizeMb alanlari zorunludur.' })
     }
 
-    const db = readDb()
-    const nextDocId = db.documents.length ? Math.max(...db.documents.map((d) => d.id)) + 1 : 1
-    const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
-    const createdAt = new Date().toISOString()
-
-    const document = {
-      id: nextDocId,
-      name: fileName,
-      sizeMb: Number(fileSizeMb),
-      action: 'timestamped',
-      createdAt,
+    const document = createTimestampedDocument({
+      fileName,
+      fileSizeMb,
       previewUrl: '/mock-files/README.txt',
-    }
-
-    db.documents.unshift(document)
-    db.activities.unshift({
-      id: nextActivityId,
-      title: `${fileName} zaman damgalandi`,
-      createdAt,
     })
-    db.dashboardStats.totalTimestamped += 1
-    db.dashboardStats.remainingCredits = Math.max(0, db.dashboardStats.remainingCredits - 1)
-    writeDb(db)
 
     return sendJson(res, 201, {
       message: 'Zaman damgalama tamamlandi.',

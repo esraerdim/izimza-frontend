@@ -5,6 +5,14 @@ import { dashboardApi, type DashboardDocument } from '../../../features/dashboar
 const documents = ref<DashboardDocument[]>([])
 const openMenuId = ref<number | null>(null)
 const menuRootRef = ref<HTMLElement | null>(null)
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001'
+
+const toAbsolutePreviewUrl = (rawUrl?: string) => {
+  if (!rawUrl) return ''
+  if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('blob:')) return rawUrl
+  if (rawUrl.startsWith('/')) return `${apiBaseUrl}${rawUrl}`
+  return `${apiBaseUrl}/${rawUrl}`
+}
 
 const formatDate = (value: string) =>
   new Date(value).toLocaleString('tr-TR', {
@@ -45,14 +53,16 @@ const loadDocuments = async () => {
 }
 
 const handleView = (document: DashboardDocument) => {
-  if (!document.previewUrl) return
-  window.open(document.previewUrl, '_blank', 'noopener,noreferrer')
+  const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
+  if (!previewUrl) return
+  window.open(previewUrl, '_blank', 'noopener,noreferrer')
 }
 
 const handleDownload = (doc: DashboardDocument) => {
-  if (!doc.previewUrl) return
+  const previewUrl = toAbsolutePreviewUrl(doc.previewUrl)
+  if (!previewUrl) return
   const link = window.document.createElement('a')
-  link.href = doc.previewUrl
+  link.href = previewUrl
   link.download = doc.name
   link.target = '_blank'
   link.rel = 'noopener noreferrer'
@@ -60,10 +70,9 @@ const handleDownload = (doc: DashboardDocument) => {
 }
 
 const handleEmailSend = (document: DashboardDocument) => {
+  const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
   const subject = encodeURIComponent(`Belge paylasimi: ${document.name}`)
-  const body = encodeURIComponent(
-    `Merhaba,\n\nBelgeyi buradan goruntuleyebilirsiniz:\n${window.location.origin}${document.previewUrl ?? ''}`,
-  )
+  const body = encodeURIComponent(`Merhaba,\n\nBelgeyi buradan goruntuleyebilirsiniz:\n${previewUrl}`)
   window.location.href = `mailto:?subject=${subject}&body=${body}`
   openMenuId.value = null
 }
