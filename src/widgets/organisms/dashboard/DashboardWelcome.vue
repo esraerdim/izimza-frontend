@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../features/auth'
 import { dashboardApi, type DashboardDocument } from '../../../features/dashboard/api/dashboard.api'
 import { BaseButton, WaveEmoji } from '../../../shared/ui'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const pendingCount = ref(0)
 const firstPendingDocument = ref<DashboardDocument | null>(null)
 
@@ -47,8 +49,7 @@ onBeforeUnmount(() => {
 })
 
 const openArchive = () => {
-  if (!firstPendingDocument.value?.previewUrl) return
-  window.open(firstPendingDocument.value.previewUrl, '_blank', 'noopener,noreferrer')
+  router.push({ name: 'archive' })
 }
 </script>
 
@@ -70,7 +71,7 @@ const openArchive = () => {
       </p>
 
       <div class="welcome-actions">
-        <BaseButton variant="secondary" :disabled="!firstPendingDocument?.previewUrl" @click="openArchive">
+        <BaseButton variant="secondary" @click="openArchive">
           Arşivi Aç
         </BaseButton>
         <BaseButton>

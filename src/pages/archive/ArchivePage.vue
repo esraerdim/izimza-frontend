@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { dashboardApi, type DashboardDocument } from '../../features/dashboard'
+import { DocumentsTable } from '../../shared/ui'
 
 type ArchiveFilter = 'all' | 'signed' | 'timestamped' | 'shared'
 
 const documents = ref<DashboardDocument[]>([])
 const activeFilter = ref<ArchiveFilter>('all')
 const search = ref('')
+const previewModalUrl = ref('')
+const previewModalTitle = ref('')
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001'
 
 const toAbsolutePreviewUrl = (rawUrl?: string) => {
@@ -15,6 +18,9 @@ const toAbsolutePreviewUrl = (rawUrl?: string) => {
   if (rawUrl.startsWith('/')) return `${apiBaseUrl}${rawUrl}`
   return `${apiBaseUrl}/${rawUrl}`
 }
+
+const canOpenDocument = (document: DashboardDocument) =>
+  Boolean(document.previewUrl) && /\.pdf($|[?#])/i.test(document.previewUrl ?? '')
 
 const formatDate = (value: string) =>
   new Date(value).toLocaleString('tr-TR', {
@@ -73,12 +79,15 @@ const loadDocuments = async () => {
 }
 
 const handleView = (document: DashboardDocument) => {
+  if (!canOpenDocument(document)) return
   const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
   if (!previewUrl) return
-  window.open(previewUrl, '_blank', 'noopener,noreferrer')
+  previewModalUrl.value = `${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`
+  previewModalTitle.value = document.name
 }
 
 const handleDownload = (document: DashboardDocument) => {
+  if (!canOpenDocument(document)) return
   const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
   if (!previewUrl) return
   const link = window.document.createElement('a')
@@ -103,7 +112,32 @@ const handleExport = () => {
   URL.revokeObjectURL(url)
 }
 
+const closePreviewModal = () => {
+  previewModalUrl.value = ''
+  previewModalTitle.value = ''
+}
+
+const openWebMailCompose = (subject: string, body: string, recipient = '') => {
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    recipient,
+  )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  window.open(gmailUrl, '_blank', 'noopener,noreferrer')
+}
+
+const handleEmailSend = (document: DashboardDocument) => {
+  const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
+  const subject = `Belge paylaşımı: ${document.name}`
+  const body = `Merhaba,\n\nBelge bağlantısı:\n${previewUrl}`
+  openWebMailCompose(subject, body)
+}
+
+const handleDelete = async (document: DashboardDocument) => {
+  await dashboardApi.deleteDocument(document.id)
+  documents.value = documents.value.filter((item) => item.id !== document.id)
+}
+
 onMounted(loadDocuments)
+onBeforeUnmount(() => closePreviewModal())
 </script>
 
 <template>
@@ -151,66 +185,31 @@ onMounted(loadDocuments)
         </label>
       </div>
 
-      <div class="archive-table-wrap">
-        <table class="archive-table">
-          <thead>
-            <tr>
-              <th>Dosya</th>
-              <th>Tarih</th>
-              <th>İşlem</th>
-              <th class="archive-actions-col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="document in filteredDocuments" :key="document.id">
-              <td>
-                <div class="archive-file-cell">
-                  <span class="archive-file-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-                      <path d="M7 3h7l5 5v13H7z"></path>
-                      <path d="M14 3v5h5"></path>
-                    </svg>
-                  </span>
-                  <div class="archive-file-meta">
-                    <strong>{{ document.name }}</strong>
-                    <small>{{ document.sizeMb }} MB</small>
-                  </div>
-                </div>
-              </td>
-              <td class="archive-muted">{{ formatDate(document.createdAt) }}</td>
-              <td>
-                <span class="archive-badge" :data-tone="actionTone(document.action)">
-                  {{ actionLabel(document.action) }}
-                </span>
-              </td>
-              <td>
-                <div class="archive-actions">
-                  <button type="button" class="archive-icon-btn" @click="handleView(document)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path>
-                      <circle cx="12" cy="12" r="2.5"></circle>
-                    </svg>
-                  </button>
-                  <button type="button" class="archive-icon-btn" @click="handleDownload(document)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                      <path d="M12 3v12"></path>
-                      <path d="M7 10l5 5 5-5"></path>
-                      <path d="M4 21h16"></path>
-                    </svg>
-                  </button>
-                  <button type="button" class="archive-icon-btn" aria-label="Diğer işlemler">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-                      <circle cx="6" cy="12" r="1.8"></circle>
-                      <circle cx="12" cy="12" r="1.8"></circle>
-                      <circle cx="18" cy="12" r="1.8"></circle>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <DocumentsTable
+        :documents="filteredDocuments"
+        :format-date="formatDate"
+        :action-label="actionLabel"
+        :action-tone="actionTone"
+        :can-open-document="canOpenDocument"
+        @view="handleView"
+        @download="handleDownload"
+        @email="handleEmailSend"
+        @delete="handleDelete"
+      />
     </section>
+
+    <div v-if="previewModalUrl" class="archive-preview-backdrop" @click.self="closePreviewModal">
+      <div class="archive-preview-modal">
+        <div class="archive-preview-head">
+          <strong>{{ previewModalTitle }}</strong>
+          <button type="button" class="archive-preview-close" @click="closePreviewModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="16" height="16">
+              <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </button>
+        </div>
+        <iframe class="archive-preview-frame" :src="previewModalUrl" title="Belge önizleme"></iframe>
+      </div>
+    </div>
   </section>
 </template>

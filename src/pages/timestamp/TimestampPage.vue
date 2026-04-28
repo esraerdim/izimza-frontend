@@ -1,243 +1,28 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
-import { dashboardApi } from '../../features/dashboard'
+import { useTimestampUpload } from '../../features/dashboard'
+import { ActionChip, FileUploadDropzone } from '../../shared/ui'
 
-const isDragOver = ref(false)
-const isUploading = ref(false)
-const isStamping = ref(false)
-const isUploaded = ref(false)
-const uploadMessage = ref('')
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const selectedFile = ref<File | null>(null)
-const uploadedDocumentId = ref<number | null>(null)
-const uploadTotalMb = ref(0)
-const uploadProgressMb = ref(0)
-const uploadProgressPercent = ref(0)
-let uploadTimer: number | null = null
-let stampingTimer: number | null = null
-const SIMULATED_UPLOAD_DURATION_MS = 5000
-const SIMULATED_STAMPING_DURATION_MS = 5000
-const previewUrl = ref('')
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001'
-const stampingProgressPercent = ref(0)
-const showCompletionModal = ref(false)
-const autoArchive = ref(true)
-
-const toAbsolutePreviewUrl = (rawUrl?: string) => {
-  if (!rawUrl) return ''
-  if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('blob:')) return rawUrl
-  if (rawUrl.startsWith('/')) return `${apiBaseUrl}${rawUrl}`
-  return `${apiBaseUrl}/${rawUrl}`
-}
-
-const stopUploadTimer = () => {
-  if (uploadTimer !== null) {
-    window.clearInterval(uploadTimer)
-    uploadTimer = null
-  }
-}
-
-const stopStampingTimer = () => {
-  if (stampingTimer !== null) {
-    window.clearInterval(stampingTimer)
-    stampingTimer = null
-  }
-}
-
-const clearPreviewUrl = () => {
-  if (previewUrl.value?.startsWith('blob:')) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
-  previewUrl.value = ''
-}
-
-const resetTimestampPage = () => {
-  stopUploadTimer()
-  stopStampingTimer()
-  clearPreviewUrl()
-  selectedFile.value = null
-  uploadedDocumentId.value = null
-  isUploading.value = false
-  isUploaded.value = false
-  isStamping.value = false
-  uploadMessage.value = ''
-  uploadTotalMb.value = 0
-  uploadProgressMb.value = 0
-  uploadProgressPercent.value = 0
-  stampingProgressPercent.value = 0
-  autoArchive.value = true
-  showCompletionModal.value = false
-}
-
-const clearSelectedFile = async () => {
-  if (uploadedDocumentId.value !== null) {
-    try {
-      await dashboardApi.deleteDocument(uploadedDocumentId.value)
-      window.dispatchEvent(new Event('dashboard:data:refresh'))
-    } catch {
-      uploadMessage.value = 'Belge silinirken bir sorun oluştu.'
-      return
-    }
-  }
-
-  resetTimestampPage()
-}
-
-const openFilePicker = () => {
-  fileInputRef.value?.click()
-}
-
-const onDragOver = (event: DragEvent) => {
-  event.preventDefault()
-  isDragOver.value = true
-}
-
-const onDragLeave = () => {
-  isDragOver.value = false
-}
-
-const onDrop = (event: DragEvent) => {
-  event.preventDefault()
-  isDragOver.value = false
-  const droppedFile = event.dataTransfer?.files?.[0]
-  if (droppedFile) {
-    uploadFile(droppedFile)
-  }
-}
-
-const onFileSelected = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const selectedFile = target.files?.[0]
-  if (selectedFile) {
-    uploadFile(selectedFile)
-  }
-  target.value = ''
-}
-
-const uploadFile = async (file: File) => {
-  stopUploadTimer()
-  clearPreviewUrl()
-  selectedFile.value = file
-  uploadMessage.value = ''
-  const fileSizeMb = Number((file.size / (1024 * 1024)).toFixed(2))
-  uploadTotalMb.value = fileSizeMb
-  uploadProgressMb.value = 0
-  uploadProgressPercent.value = 0
-  if (fileSizeMb > 50) {
-    uploadMessage.value = 'Dosya boyutu 50 MB limitini asamaz.'
-    selectedFile.value = null
-    isUploaded.value = false
-    return
-  }
-
-  isUploaded.value = false
-  isUploading.value = true
-  const startedAt = Date.now()
-  uploadTimer = window.setInterval(async () => {
-    const elapsedMs = Date.now() - startedAt
-    const progressRatio = Math.min(1, elapsedMs / SIMULATED_UPLOAD_DURATION_MS)
-    uploadProgressPercent.value = Math.round(progressRatio * 100)
-    uploadProgressMb.value = Number((uploadTotalMb.value * progressRatio).toFixed(2))
-
-    if (progressRatio >= 1) {
-      stopUploadTimer()
-      isUploading.value = false
-      try {
-        const uploadedDoc = await dashboardApi.uploadDocument({ file })
-        uploadedDocumentId.value = uploadedDoc.id
-        isUploaded.value = true
-        uploadMessage.value = 'Yüklendi · Damgalamaya hazır'
-        previewUrl.value = toAbsolutePreviewUrl(uploadedDoc.previewUrl) || URL.createObjectURL(file)
-        window.dispatchEvent(new Event('dashboard:data:refresh'))
-      } catch {
-        uploadMessage.value = 'Yükleme sırasında bir sorun oluştu.'
-      }
-    }
-  }, 100)
-}
-
-const handleTimestamp = async () => {
-  if (!selectedFile.value || isStamping.value || uploadedDocumentId.value === null) return
-
-  isStamping.value = true
-  stampingProgressPercent.value = 0
-  stopStampingTimer()
-  const startedAt = Date.now()
-  stampingTimer = window.setInterval(() => {
-    // Keep animation moving while backend operation continues.
-    const next = stampingProgressPercent.value + Math.max(1, Math.round(Math.random() * 6))
-    stampingProgressPercent.value = Math.min(93, next)
-  }, 140)
-
-  try {
-    await dashboardApi.markDocumentTimestamped(uploadedDocumentId.value)
-    const elapsed = Date.now() - startedAt
-    if (elapsed < SIMULATED_STAMPING_DURATION_MS) {
-      await new Promise((resolve) => window.setTimeout(resolve, SIMULATED_STAMPING_DURATION_MS - elapsed))
-    }
-    stopStampingTimer()
-    stampingProgressPercent.value = 100
-    uploadMessage.value = 'Damgalama tamamlandı.'
-    window.dispatchEvent(new Event('dashboard:data:refresh'))
-    autoArchive.value = true
-    showCompletionModal.value = true
-    window.setTimeout(() => {
-      isStamping.value = false
-      stampingProgressPercent.value = 0
-    }, 450)
-  } catch {
-    stopStampingTimer()
-    stampingProgressPercent.value = 0
-    uploadMessage.value = 'Zaman damgalama sırasında bir sorun oluştu.'
-    isStamping.value = false
-  }
-}
-
-const closeCompletionModal = () => {
-  if (!autoArchive.value && uploadedDocumentId.value !== null) {
-    dashboardApi
-      .deleteDocument(uploadedDocumentId.value)
-      .then(() => {
-        window.dispatchEvent(new Event('dashboard:data:refresh'))
-        resetTimestampPage()
-      })
-      .catch(() => {
-        uploadMessage.value = 'Arşiv kaydı güncellenemedi.'
-      })
-    return
-  }
-  resetTimestampPage()
-}
-
-const sendToMe = () => {
-  if (!selectedFile.value) return
-  const subject = encodeURIComponent(`Damgalanan Belge: ${selectedFile.value.name}`)
-  const body = encodeURIComponent('Belge başarıyla damgalandı.')
-  window.location.href = `mailto:?subject=${subject}&body=${body}`
-}
-
-const sendToOther = () => {
-  if (!selectedFile.value) return
-  const subject = encodeURIComponent(`Belge Paylaşımı: ${selectedFile.value.name}`)
-  const body = encodeURIComponent('Belgeyi incelemeniz için iletiyorum.')
-  window.location.href = `mailto:?subject=${subject}&body=${body}`
-}
-
-const downloadStampedFile = () => {
-  if (!previewUrl.value || !selectedFile.value) return
-  const link = window.document.createElement('a')
-  link.href = previewUrl.value
-  link.download = selectedFile.value.name
-  link.target = '_blank'
-  link.rel = 'noopener noreferrer'
-  link.click()
-}
-
-onBeforeUnmount(() => {
-  stopUploadTimer()
-  stopStampingTimer()
-  clearPreviewUrl()
-})
+const {
+  isUploading,
+  isStamping,
+  isUploaded,
+  uploadMessage,
+  selectedFile,
+  uploadTotalMb,
+  uploadProgressMb,
+  uploadProgressPercent,
+  previewUrl,
+  stampingProgressPercent,
+  showCompletionModal,
+  autoArchive,
+  clearSelectedFile,
+  uploadFile,
+  handleTimestamp,
+  closeCompletionModal,
+  sendToMe,
+  sendToOther,
+  downloadStampedFile,
+} = useTimestampUpload()
 </script>
 
 <template>
@@ -247,39 +32,21 @@ onBeforeUnmount(() => {
     <p class="timestamp-sub">RFC 3161 uyumlu nitelikli zaman damgası ile dosyalarına resmi tarih ekle.</p>
 
     <div class="stamp-stage" :class="{ 'has-file': !!selectedFile }">
-      <section
-        class="drop drop-large"
-        :class="{ pulse: !!selectedFile, 'is-dragover': isDragOver }"
-        role="button"
-        tabindex="0"
-        @dragover="onDragOver"
-        @dragenter="onDragOver"
-        @dragleave="onDragLeave"
-        @drop="onDrop"
-        @click="openFilePicker"
-        @keydown.enter.prevent="openFilePicker"
-        @keydown.space.prevent="openFilePicker"
+      <FileUploadDropzone
+        :is-pulse="!!selectedFile"
+        title="Dosyalarını yüklemek için tıkla ya da sürükle"
+        subtitle="PDF · DOCX · PNG · JPG · En fazla 50 MB"
+        :status-text="isUploading ? 'İşleniyor...' : uploadMessage"
+        @file-selected="uploadFile"
       >
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-          hidden
-          @change="onFileSelected"
-        />
-
-        <div class="drop-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <path d="M17 8l-5-5-5 5"></path>
-            <path d="M12 3v12"></path>
-          </svg>
-        </div>
-        <div class="drop-title">Dosyalarını yüklemek için tıkla ya da sürükle</div>
-        <div class="drop-sub">Tek seferde bir belge · maks 50 MB</div>
-        <p v-if="isUploading" class="timestamp-drop-status">İşleniyor...</p>
-        <p v-else-if="uploadMessage" class="timestamp-drop-status">{{ uploadMessage }}</p>
-      </section>
+        <template #footer>
+          <div class="drop-chips">
+            <ActionChip label="İmza ekle" icon="sign" />
+            <ActionChip label="Zaman damgası" icon="stamp" />
+            <ActionChip label="Paylaş" icon="share" />
+          </div>
+        </template>
+      </FileUploadDropzone>
 
       <aside class="stamp-preview-card" v-if="selectedFile">
         <button
