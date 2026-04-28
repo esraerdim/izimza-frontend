@@ -26,6 +26,18 @@ npm run dev
 - `api/middleware.cjs`: auth ve custom endpoint davranislari
 - `package.json > dev:api`: json-server + middleware komutu
 
+## Frontend Architecture
+
+Proje `Atomic Design + feature-oriented` yaklasimla kuruldu:
+
+- `app/`: bootstrap, provider, global style
+- `pages/`: route girisleri
+- `widgets/`: page-level buyuk bloklar (organism/template)
+- `features/`: domain/use-case modul sinirlari
+- `shared/`: ortak ui/api/lib/type katmani
+
+Detayli aciklama: `src/ARCHITECTURE.md`
+
 ## Endpointler
 
 ### Auth

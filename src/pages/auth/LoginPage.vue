@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../features/auth/model/auth.store'
-import BaseButton from '../../shared/ui/atoms/BaseButton.vue'
-import BaseInput from '../../shared/ui/atoms/BaseInput.vue'
-import FormField from '../../shared/ui/molecules/FormField.vue'
+import { useAuthStore } from '../../features/auth'
+import { BaseButton, BaseInput, FormField } from '../../shared/ui'
 
 const router = useRouter()
 const authStore = useAuthStore()

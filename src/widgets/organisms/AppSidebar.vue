@@ -1,40 +1,33 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../features/auth/model/auth.store'
-import BaseButton from '../../shared/ui/atoms/BaseButton.vue'
+import { NavIcon } from '../../shared/ui'
+import type { NavIconName } from '../../shared/ui/atoms/NavIcon.vue'
 
-const router = useRouter()
-const authStore = useAuthStore()
-
-const navItems = [
-  { name: 'dashboard', label: 'Anasayfa', to: '/' },
-  { name: 'timestamp', label: 'Zaman Damgala', to: '/timestamp' },
-  { name: 'archive', label: 'Arsiv', to: '/archive' },
-  { name: 'profile', label: 'Profil', to: '/settings/profile' },
+const navItems: { name: string; label: string; to: string; icon: NavIconName }[] = [
+  { name: 'dashboard', label: 'Anasayfa', to: '/', icon: 'home' },
+  { name: 'timestamp', label: 'Zaman Damgala', to: '/timestamp', icon: 'clock' },
+  { name: 'archive', label: 'Arşiv', to: '/archive', icon: 'archive' },
 ]
-
-const handleLogout = async () => {
-  await authStore.logout()
-  await router.push({ name: 'login' })
-}
 </script>
 
 <template>
   <aside class="sidebar">
-    <h1 class="brand">izimza</h1>
-    <p class="user-email" v-if="authStore.user">{{ authStore.user.email }}</p>
+    <div class="brand-row">
+      <div class="brand-icon">N</div>
+      <h1 class="brand">izimza</h1>
+    </div>
     <nav class="menu">
       <RouterLink
         v-for="item in navItems"
         :key="item.name"
         :to="item.to"
-        class="menu-item"
-        active-class="is-active"
+        class="nav-item"
+        exact-active-class="active"
       >
+        <span class="nav-icon" aria-hidden="true">
+          <NavIcon :name="item.icon" />
+        </span>
         {{ item.label }}
       </RouterLink>
     </nav>
-
-    <BaseButton variant="secondary" @click="handleLogout">Cikis Yap</BaseButton>
   </aside>
 </template>
