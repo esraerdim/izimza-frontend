@@ -45,6 +45,12 @@ a {
   font-size: 24px;
 }
 
+.user-email {
+  margin: 8px 0 0;
+  color: #757792;
+  font-size: 13px;
+}
+
 .menu {
   display: flex;
   flex-direction: column;
@@ -93,6 +99,64 @@ a {
 .description {
   margin-top: 12px;
   color: #666985;
+}
+
+.login-page {
+  max-width: 460px;
+  margin: 80px auto;
+}
+
+.login-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  color: #34344b;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.field input {
+  border: 1px solid #dfe2ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #5a57ff 0%, #7a57f8 100%);
+  color: #ffffff;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  margin-top: 16px;
+  border: 1px solid #dfe2ef;
+  background-color: #ffffff;
+  color: #494a63;
+}
+
+.error-text {
+  margin-top: 14px;
+  color: #d6336c;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {

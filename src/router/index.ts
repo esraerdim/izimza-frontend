@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
   {
@@ -41,9 +42,14 @@ export const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
-  const accessToken = localStorage.getItem('izimza_access_token')
-  const isAuthenticated = Boolean(accessToken)
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  if (!authStore.isInitialized) {
+    await authStore.fetchMe()
+  }
+
+  const isAuthenticated = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     return { name: 'login' }
