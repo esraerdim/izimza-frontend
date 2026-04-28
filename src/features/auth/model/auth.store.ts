@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { authApi, type AuthUser } from '../services/api/auth.api'
-import { extractApiErrorMessage } from '../utils/api-error'
+import { authApi, type AuthUser } from '../api/auth.api'
+import { extractApiErrorMessage } from '../../../shared/lib/api-error'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)

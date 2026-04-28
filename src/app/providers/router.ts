@@ -1,37 +1,37 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '../../features/auth/model/auth.store'
 
 const routes = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('../views/LoginView.vue'),
+    component: () => import('../../pages/auth/LoginPage.vue'),
     meta: { guestOnly: true },
   },
   {
     path: '/',
-    component: () => import('../layouts/AppLayout.vue'),
+    component: () => import('../../widgets/templates/AppShellTemplate.vue'),
     meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'dashboard',
-        component: () => import('../views/DashboardView.vue'),
+        component: () => import('../../pages/dashboard/DashboardPage.vue'),
       },
       {
         path: 'timestamp',
         name: 'timestamp',
-        component: () => import('../views/TimestampView.vue'),
+        component: () => import('../../pages/timestamp/TimestampPage.vue'),
       },
       {
         path: 'archive',
         name: 'archive',
-        component: () => import('../views/ArchiveView.vue'),
+        component: () => import('../../pages/archive/ArchivePage.vue'),
       },
       {
         path: 'settings/profile',
         name: 'profile',
-        component: () => import('../views/ProfileView.vue'),
+        component: () => import('../../pages/profile/ProfilePage.vue'),
       },
     ],
   },
@@ -49,13 +49,11 @@ router.beforeEach(async (to) => {
     await authStore.fetchMe()
   }
 
-  const isAuthenticated = authStore.isAuthenticated
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login' }
   }
 
-  if (to.meta.guestOnly && isAuthenticated) {
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
     return { name: 'dashboard' }
   }
 
