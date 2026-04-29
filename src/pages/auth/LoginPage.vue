@@ -32,6 +32,8 @@ const submitOAuthLogin = async () => {
     return
   }
   try {
+    // Prevent carrying previous demo session into OAuth flow.
+    await authStore.logout()
     await startOAuthLogin()
   } catch (error) {
     authStore.errorMessage = error instanceof Error ? error.message : 'OAuth girisi başlatılamadı.'
