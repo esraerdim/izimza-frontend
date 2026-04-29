@@ -29,6 +29,26 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const loginWithOAuthProfile = async (payload: {
+    email: string
+    firstName?: string
+    lastName?: string
+  }) => {
+    isLoading.value = true
+    errorMessage.value = ''
+    try {
+      const response = await authApi.oauthLogin(payload)
+      user.value = response.user
+      isInitialized.value = true
+      return true
+    } catch (error: unknown) {
+      errorMessage.value = extractApiErrorMessage(error, 'OAuth girisi sirasinda bir hata olustu.')
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const fetchMe = async () => {
     if (fetchMePromise) return fetchMePromise
 
@@ -64,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage,
     isAuthenticated,
     login,
+    loginWithOAuthProfile,
     fetchMe,
     logout,
   }

@@ -242,6 +242,37 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { user: sanitizeUser(user) })
   }
 
+  if (req.method === 'POST' && req.path === '/api/auth/oauth-login') {
+    const { email, firstName, lastName } = req.body ?? {}
+    if (!email) {
+      return sendJson(res, 400, { message: 'OAuth profile email alani zorunludur.' })
+    }
+
+    const db = readDb()
+    const normalizedEmail = String(email).trim().toLowerCase()
+    let user = db.users.find((item) => item.email.toLowerCase() === normalizedEmail)
+
+    if (!user) {
+      const nextUserId = db.users.length ? Math.max(...db.users.map((item) => item.id)) + 1 : 1
+      user = {
+        id: nextUserId,
+        email: normalizedEmail,
+        firstName: firstName || 'OAuth',
+        lastName: lastName || 'Kullanici',
+        phone: '',
+        password: 'oauth-user',
+      }
+      db.users.push(user)
+      writeDb(db)
+    }
+
+    res.setHeader(
+      'Set-Cookie',
+      `${SESSION_COOKIE_NAME}=${createSessionValue(user.id)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=86400`,
+    )
+    return sendJson(res, 200, { user: sanitizeUser(user) })
+  }
+
   if (req.method === 'POST' && req.path === '/api/auth/logout') {
     res.setHeader(
       'Set-Cookie',

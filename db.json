@@ -7,6 +7,14 @@
       "firstName": "Esra",
       "lastName": "Erdim",
       "phone": "0(538) 659-6970"
+    },
+    {
+      "id": 2,
+      "email": "esraaerdim@gmail.com",
+      "firstName": "esra",
+      "lastName": "erdim",
+      "phone": "",
+      "password": "oauth-user"
     }
   ],
   "dashboardStats": {

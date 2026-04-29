@@ -9,6 +9,12 @@ const routes = [
     meta: { guestOnly: true },
   },
   {
+    path: '/auth/callback',
+    name: 'auth-callback',
+    component: () => import('../../pages/auth/OAuthCallbackPage.vue'),
+    meta: { guestOnly: true },
+  },
+  {
     path: '/',
     component: () => import('../../widgets/templates/AppShellTemplate.vue'),
     meta: { requiresAuth: true },

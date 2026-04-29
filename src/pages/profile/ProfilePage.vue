@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const profileForm = ref({
   firstName: 'Ahmet',
@@ -24,6 +24,40 @@ const onChangePassword = () => {
   showPasswordAccordion.value = !showPasswordAccordion.value
   securityMessage.value = ''
 }
+
+const hasMinLength = computed(() => passwordForm.value.newPassword.length >= 8)
+const hasUppercase = computed(() => /[A-ZÇĞİÖŞÜ]/.test(passwordForm.value.newPassword))
+const hasNumberOrSymbol = computed(() => /[\d\W_]/.test(passwordForm.value.newPassword))
+
+const strengthScore = computed(() => {
+  let score = 0
+  if (hasMinLength.value) score += 1
+  if (hasUppercase.value) score += 1
+  if (hasNumberOrSymbol.value) score += 1
+  return score
+})
+
+const strengthPercent = computed(() => Math.min(100, Math.round((strengthScore.value / 3) * 100)))
+
+const strengthLabel = computed(() => {
+  if (!passwordForm.value.newPassword) return ''
+  if (strengthScore.value <= 1) return 'Şifre çok zayıf'
+  if (strengthScore.value === 2) return 'Şifre orta seviyede'
+  return 'Şifre güçlü'
+})
+
+const strengthTone = computed(() => {
+  if (!passwordForm.value.newPassword) return 'idle'
+  if (strengthScore.value <= 1) return 'weak'
+  if (strengthScore.value === 2) return 'medium'
+  return 'strong'
+})
+
+const livePasswordMismatch = computed(() => {
+  const { newPassword, confirmPassword } = passwordForm.value
+  if (!newPassword || !confirmPassword) return false
+  return newPassword !== confirmPassword
+})
 
 const cancelPasswordChange = () => {
   showPasswordAccordion.value = false
@@ -134,11 +168,29 @@ const submitPasswordChange = () => {
             <span>Yeni Şifre</span>
             <input v-model="passwordForm.newPassword" type="password" autocomplete="new-password" />
           </label>
+          <div v-if="passwordForm.newPassword" class="profile-password-strength">
+            <div class="profile-strength-track">
+              <span :class="`tone-${strengthTone}`" :style="{ width: `${strengthPercent}%` }"></span>
+            </div>
+            <p class="profile-strength-label" :class="`tone-${strengthTone}`">
+              {{ strengthLabel }}
+            </p>
+          </div>
           <label class="field">
             <span>Yeni Şifre (Tekrar)</span>
             <input v-model="passwordForm.confirmPassword" type="password" autocomplete="new-password" />
           </label>
         </div>
+
+        <div class="profile-password-rules">
+          <p>Şifre Gereksinimleri</p>
+          <ul>
+            <li :class="{ done: hasMinLength }">En az 8 karakter</li>
+            <li :class="{ done: hasUppercase }">En az bir büyük harf</li>
+            <li :class="{ done: hasNumberOrSymbol }">En az bir rakam veya sembol</li>
+          </ul>
+        </div>
+        <p v-if="livePasswordMismatch" class="profile-note">Yeni şifre alanları eşleşmiyor.</p>
         <div class="profile-password-actions">
           <button type="button" class="btn-primary" @click="submitPasswordChange">Şifreyi Güncelle</button>
           <button type="button" class="profile-cancel-btn" @click="cancelPasswordChange">İptal</button>

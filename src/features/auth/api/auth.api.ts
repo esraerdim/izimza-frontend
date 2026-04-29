@@ -13,6 +13,12 @@ export type AuthUser = {
   phone: string
 }
 
+export type OAuthLoginPayload = {
+  email: string
+  firstName?: string
+  lastName?: string
+}
+
 type LoginResponse = {
   user: AuthUser
 }
@@ -30,5 +36,10 @@ export const authApi = {
 
   async logout(): Promise<void> {
     await http.post('/api/auth/logout')
+  },
+
+  async oauthLogin(payload: OAuthLoginPayload): Promise<LoginResponse> {
+    const { data } = await http.post<LoginResponse>('/api/auth/oauth-login', payload)
+    return data
   },
 }
