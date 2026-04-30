@@ -1,1 +1,1 @@
-export { http } from './http'
+export { http, setUnauthorizedHandler } from './http'

@@ -1,6 +1,229 @@
+<template>
+  <section class="timestamp-page" :class="{ 'timestamp-page--with-dock': showStampDock }">
+    <PageHeader
+      :kicker="t('timestampPage.eyebrow')"
+      :title="t('timestampPage.title')"
+      :subtitle="t('timestampPage.sub')"
+    />
+
+    <div
+      class="timestamp-page__stage"
+      :class="{ 'timestamp-page__stage--has-file': !!selectedFile }"
+    >
+      <FileUploadDropzone
+        :is-pulse="!!selectedFile"
+        :title="t('timestampPage.dropTitle')"
+        :subtitle="t('timestampPage.dropSubtitle')"
+        :status-text="isUploading ? t('timestampPage.processing') : uploadMessage"
+        @file-selected="uploadFile"
+      >
+        <template #footer>
+          <DropzoneChips />
+        </template>
+      </FileUploadDropzone>
+
+      <aside v-if="selectedFile" class="timestamp-page__preview-card">
+        <IconButton
+          v-if="isUploaded && !isStamping"
+          icon="trash"
+          :label="t('timestampPage.removeFileAria')"
+          :icon-size="13"
+          variant="soft"
+          class="timestamp-page__trash"
+          @click="clearSelectedFile"
+        />
+        <div
+          class="timestamp-page__paper"
+          :class="{ 'timestamp-page__paper--busy': isUploading || isStamping }"
+        >
+          <div
+            v-if="isUploaded && previewUrl"
+            class="timestamp-page__paper-body timestamp-page__paper-body--pdf"
+          >
+            <iframe
+              class="timestamp-page__frame"
+              :src="`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`"
+              :title="t('timestampPage.previewTitle')"
+              scrolling="no"
+            ></iframe>
+            <div
+              v-if="isStamping"
+              class="timestamp-page__stamp-overlay"
+              :style="{ '--stamp-p': `${stampingProgressPercent}%` }"
+              aria-hidden="true"
+            >
+              <div class="timestamp-page__stamp-overlay-gradient" />
+              <div class="timestamp-page__stamp-overlay-shade" />
+              <div class="timestamp-page__stamp-overlay-ui">
+                <Icon name="stamp" :size="26" :stroke-width="1.6" />
+                <span class="timestamp-page__stamp-pct">%{{ stampingProgressPercent }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="timestamp-page__paper-body timestamp-page__paper-body--loading">
+            <div class="timestamp-page__skeleton-lines">
+              <SkeletonBar width="80%" height="8px" />
+              <SkeletonBar width="100%" height="8px" />
+              <SkeletonBar width="60%" height="8px" />
+            </div>
+            <div class="timestamp-page__eq" aria-hidden="true">
+              <span v-for="i in 7" :key="i" class="timestamp-page__eq-bar" :style="eqBarStyle(i)" />
+            </div>
+          </div>
+        </div>
+        <div class="timestamp-page__meta">
+          <p class="timestamp-page__file-name">{{ selectedFile.name }}</p>
+          <p class="timestamp-page__file-size">{{ formatFileSize(selectedFile.size) }} MB</p>
+          <p
+            class="timestamp-page__file-state"
+            :class="{ 'timestamp-page__file-state--ready': isUploaded && !isStamping }"
+          >
+            {{
+              isStamping
+                ? t('timestampPage.stamping')
+                : uploadMessage || t('timestampPage.uploading')
+            }}
+          </p>
+          <div v-if="isUploading" class="timestamp-page__upload-progress">
+            <div class="timestamp-page__upload-head">
+              <span>{{ uploadProgressMb.toFixed(1) }} MB / {{ uploadTotalMb.toFixed(1) }} MB</span>
+              <strong>%{{ uploadProgressPercent }}</strong>
+            </div>
+            <ProgressBar :value="uploadProgressPercent" tone="brand" />
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showStampDock"
+        class="timestamp-page__dock"
+        role="region"
+        :aria-label="t('timestampPage.actionReadyTitle')"
+      >
+        <div class="timestamp-page__dock-inner">
+          <Icon name="shield" :size="18" class="timestamp-page__dock-shield" />
+          <div class="timestamp-page__dock-copy">
+            <div class="timestamp-page__dock-title">{{ t('timestampPage.actionReadyTitle') }}</div>
+            <div class="timestamp-page__dock-sub">
+              {{ t('timestampPage.actionReadySubFull', { use: creditUse, remain: creditsRemain }) }}
+            </div>
+          </div>
+          <button type="button" class="timestamp-page__dock-cta" @click="handleTimestamp">
+            <Icon name="stamp" :size="16" />
+            {{ t('timestampPage.actionButton') }}
+          </button>
+        </div>
+      </div>
+    </Teleport>
+
+    <BaseModal
+      :open="showCompletionModal && Boolean(selectedFile)"
+      :aria-label="t('timestampPage.modalTitle')"
+      @close="closeCompletionModal"
+    >
+      <div v-if="selectedFile" class="timestamp-page__completion">
+        <div class="timestamp-page__completion-bar">
+          <span class="timestamp-page__completion-bar-spacer" aria-hidden="true" />
+          <IconButton
+            icon="close"
+            class="timestamp-page__close"
+            :label="t('common.closeDialog')"
+            :icon-size="16"
+            @click="closeCompletionModal"
+          />
+        </div>
+
+        <div class="timestamp-page__celebrate">
+          <ConfettiBurst centered />
+          <div class="timestamp-page__check-wrap">
+            <span class="timestamp-page__ripple" />
+            <span class="timestamp-page__ripple" />
+            <span class="timestamp-page__ripple" />
+            <div class="timestamp-page__check-ring">
+              <Icon name="check" :size="28" :stroke-width="2" />
+            </div>
+          </div>
+        </div>
+        <h3 class="timestamp-page__completion-title">{{ t('timestampPage.modalTitle') }}</h3>
+        <p class="timestamp-page__completion-sub">
+          {{ t('timestampPage.modalSub', { time: completionTimestampLabel }) }}
+        </p>
+
+        <div class="timestamp-page__completion-file">
+          <div class="timestamp-page__file-thumb">
+            <Icon name="file" :size="16" />
+          </div>
+          <div>
+            <div class="timestamp-page__file-thumb-name">{{ selectedFile.name }}</div>
+            <div class="timestamp-page__file-thumb-size">
+              {{ formatFileSize(selectedFile.size) }} MB · {{ t('timestampPage.tsaSignedSuffix') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="timestamp-page__completion-actions">
+          <BaseButton variant="ghost" size="sm" @click="onSendToMe">
+            <Icon name="paper-plane" :size="14" />
+            {{ t('timestampPage.sendMe') }}
+          </BaseButton>
+          <BaseButton variant="ghost" size="sm" @click="recipient.open()">
+            <Icon name="user" :size="14" />
+            {{ t('timestampPage.sendOther') }}
+          </BaseButton>
+          <BaseButton size="sm" @click="onDownload">
+            <Icon name="download" :size="14" />
+            {{ t('timestampPage.download') }}
+          </BaseButton>
+        </div>
+
+        <label class="timestamp-page__archive-toggle">
+          <input v-model="autoArchive" type="checkbox" />
+          <span>{{ t('timestampPage.autoArchive') }}</span>
+        </label>
+      </div>
+    </BaseModal>
+
+    <RecipientDialog
+      :open="recipient.isOpen.value"
+      :model-value="recipient.draft.value"
+      :invalid="recipientInvalid"
+      @update:model-value="onRecipientInput"
+      @cancel="onRecipientCancel"
+      @confirm="onConfirmRecipient"
+    />
+  </section>
+</template>
+
 <script setup lang="ts">
-import { useTimestampUpload } from '../../features/dashboard'
-import { ActionChip, FileUploadDropzone } from '../../shared/ui'
+import { onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  useRecipientDialog,
+  useTimestampPageView,
+  useTimestampUpload,
+  RecipientDialog,
+} from '@/features/timestamp'
+import { useDashboardStore } from '@/features/dashboard'
+import {
+  BaseButton,
+  BaseModal,
+  ConfettiBurst,
+  DropzoneChips,
+  FileUploadDropzone,
+  Icon,
+  IconButton,
+  PageHeader,
+  ProgressBar,
+  SkeletonBar,
+} from '@/shared/ui'
+
+const { t } = useI18n()
+const dashboardStore = useDashboardStore()
+const creditUse = 1
+
+const recipient = useRecipientDialog()
 
 const {
   isUploading,
@@ -15,209 +238,526 @@ const {
   stampingProgressPercent,
   showCompletionModal,
   autoArchive,
+  completionTimestampLabel,
+  completion,
   clearSelectedFile,
   uploadFile,
   handleTimestamp,
   closeCompletionModal,
-  sendToMe,
-  sendToOther,
-  downloadStampedFile,
 } = useTimestampUpload()
+
+const {
+  recipientInvalid,
+  creditsRemain,
+  showStampDock,
+  eqBarStyle,
+  formatFileSize,
+  onSendToMe,
+  onDownload,
+  onRecipientInput,
+  onRecipientCancel,
+  onConfirmRecipient,
+} = useTimestampPageView({
+  remainingCredits: () => dashboardStore.stats.remainingCredits,
+  creditUse,
+  isUploaded: () => isUploaded.value,
+  isStamping: () => isStamping.value,
+  isCompletionOpen: () => showCompletionModal.value,
+  selectedFile: () => selectedFile.value,
+  previewUrl: () => previewUrl.value,
+  completion,
+  recipient,
+})
+
+onMounted(() => {
+  dashboardStore.loadStats()
+})
 </script>
 
-<template>
-  <section class="page timestamp-page">
-    <p class="eyebrow">BELGELERİNİ GÜVENE AL</p>
-    <h1 class="timestamp-title">Zaman Damgala</h1>
-    <p class="timestamp-sub">RFC 3161 uyumlu nitelikli zaman damgası ile dosyalarına resmi tarih ekle.</p>
+<style scoped>
+.timestamp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 24px;
+}
 
-    <div class="stamp-stage" :class="{ 'has-file': !!selectedFile }">
-      <FileUploadDropzone
-        :is-pulse="!!selectedFile"
-        title="Dosyalarını yüklemek için tıkla ya da sürükle"
-        subtitle="PDF · DOCX · PNG · JPG · En fazla 50 MB"
-        :status-text="isUploading ? 'İşleniyor...' : uploadMessage"
-        @file-selected="uploadFile"
-      >
-        <template #footer>
-          <div class="drop-chips">
-            <ActionChip label="İmza ekle" icon="sign" />
-            <ActionChip label="Zaman damgası" icon="stamp" />
-            <ActionChip label="Paylaş" icon="share" />
-          </div>
-        </template>
-      </FileUploadDropzone>
+.timestamp-page--with-dock {
+  padding-bottom: 112px;
+}
 
-      <aside class="stamp-preview-card" v-if="selectedFile">
-        <button
-          v-if="isUploaded && !isStamping"
-          class="stamp-trash-btn"
-          type="button"
-          @click="clearSelectedFile"
-          aria-label="Dosyayı kaldır"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-            <path d="M3 6h18"></path>
-            <path d="M8 6V4h8v2"></path>
-            <path d="M19 6l-1 14H6L5 6"></path>
-            <path d="M10 10v7"></path>
-            <path d="M14 10v7"></path>
-          </svg>
-        </button>
-        <div v-if="isUploaded && previewUrl" class="stamp-preview-paper stamp-preview-paper-file">
-          <iframe
-            class="stamp-preview-frame"
-            :src="`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`"
-            title="Yüklenen PDF önizleme"
-            scrolling="no"
-          ></iframe>
-        </div>
-        <div v-else class="stamp-preview-paper">
-          <div class="stamp-line long"></div>
-          <div class="stamp-line"></div>
-          <div class="stamp-line short"></div>
-          <div class="stamp-bars">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-        <div v-if="isStamping" class="stamp-stamping-overlay">
-          <div class="stamp-stamping-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
-              <path d="M5 21h14"></path>
-              <path d="M9 17h6l1.5-3a4 4 0 0 0-1-5L14 7V5a2 2 0 1 0-4 0v2L7.5 9a4 4 0 0 0-1 5z"></path>
-            </svg>
-          </div>
-          <div class="stamp-stamping-percent">%{{ stampingProgressPercent }}</div>
-          <div class="stamp-stamping-bars">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-        <div class="stamp-preview-meta">
-          <p class="stamp-file-name">{{ selectedFile.name }}</p>
-          <p class="stamp-file-size">{{ (selectedFile.size / (1024 * 1024)).toFixed(1) }} MB</p>
-          <p class="stamp-file-state" :class="{ ready: isUploaded && !isStamping }">
-            {{ isStamping ? 'Damgalanıyor...' : uploadMessage || 'Yükleniyor...' }}
-          </p>
-          <div v-if="isUploading" class="stamp-upload-progress">
-            <div class="stamp-upload-progress-head">
-              <span>{{ uploadProgressMb.toFixed(1) }} MB / {{ uploadTotalMb.toFixed(1) }} MB</span>
-              <strong>%{{ uploadProgressPercent }}</strong>
-            </div>
-            <div class="stamp-upload-progress-track">
-              <span :style="{ width: `${uploadProgressPercent}%` }"></span>
-            </div>
-          </div>
-        </div>
-      </aside>
+.timestamp-page__stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
 
-    </div>
+.timestamp-page__stage--has-file {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, min(380px, 100%));
+  align-items: stretch;
+}
 
-    <div class="action-bar" v-if="isUploaded && selectedFile">
-      <div class="action-info">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-          <path d="M12 2l8 3v7c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V5z"></path>
-        </svg>
-        <div>
-          <div class="action-title">Damgalamaya hazır</div>
-          <div class="action-sub">1 kontör kullanılacak · 8 kontör kalır</div>
-        </div>
-      </div>
-      <button class="action-button" type="button" :disabled="isStamping" @click="handleTimestamp">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-          <path d="M5 21h14"></path>
-          <path d="M9 17h6l1.5-3a4 4 0 0 0-1-5L14 7V5a2 2 0 1 0-4 0v2L7.5 9a4 4 0 0 0-1 5z"></path>
-        </svg>
-        {{ isStamping ? 'Damgalanıyor...' : 'Zaman Damgala' }}
-      </button>
-    </div>
+@media (max-width: 900px) {
+  .timestamp-page__stage--has-file {
+    grid-template-columns: 1fr;
+  }
 
-    <div v-if="showCompletionModal && selectedFile" class="modal-back" @click.self="closeCompletionModal">
-      <div class="modal">
-        <div class="modal-celebrate">
-          <div class="celebrate-ring">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28">
-              <path d="M5 12l5 5L20 7"></path>
-            </svg>
-          </div>
-          <div class="confetti">
-            <span class="confetti-bit c0" style="--i: 0;"></span>
-            <span class="confetti-bit c1" style="--i: 1;"></span>
-            <span class="confetti-bit c2" style="--i: 2;"></span>
-            <span class="confetti-bit c3" style="--i: 3;"></span>
-            <span class="confetti-bit c0" style="--i: 4;"></span>
-            <span class="confetti-bit c1" style="--i: 5;"></span>
-            <span class="confetti-bit c2" style="--i: 6;"></span>
-            <span class="confetti-bit c3" style="--i: 7;"></span>
-            <span class="confetti-bit c0" style="--i: 8;"></span>
-            <span class="confetti-bit c1" style="--i: 9;"></span>
-            <span class="confetti-bit c2" style="--i: 10;"></span>
-            <span class="confetti-bit c3" style="--i: 11;"></span>
-            <span class="confetti-bit c0" style="--i: 12;"></span>
-            <span class="confetti-bit c1" style="--i: 13;"></span>
-          </div>
-        </div>
-        <h3 class="modal-title">Zaman Damgalama Tamamlandı</h3>
-        <p class="modal-sub">
-          {{ new Date().toLocaleString('tr-TR') }} itibariyle dosyan kanıtlanabilir şekilde mühürlendi.
-        </p>
+  .timestamp-page__preview-card {
+    max-width: none;
+  }
+}
 
-        <div class="modal-file">
-          <div class="ft-thumb">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <path d="M14 2v6h6"></path>
-            </svg>
-          </div>
-          <div>
-            <div class="ft-name">{{ selectedFile.name }}</div>
-            <div class="ft-size">{{ (selectedFile.size / (1024 * 1024)).toFixed(2) }} MB · TSA tarafından imzalandı</div>
-          </div>
-        </div>
+.timestamp-page__preview-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  margin-inline: auto;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  padding: 12px 12px 14px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  height: 100%;
+}
 
-        <div class="modal-actions">
-          <button class="btn btn-ghost" type="button" @click="sendToMe">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-              <path d="M22 2L11 13"></path>
-              <path d="M22 2l-7 20-4-9-9-4z"></path>
-            </svg>
-            Bana Gönder
-          </button>
-          <button class="btn btn-ghost" type="button" @click="sendToOther">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-              <circle cx="12" cy="8" r="4"></circle>
-              <path d="M4 21a8 8 0 0 1 16 0"></path>
-            </svg>
-            Başkasına Gönder
-          </button>
-          <button class="btn btn-primary" type="button" @click="downloadStampedFile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <path d="M7 10l5 5 5-5"></path>
-              <path d="M12 15V3"></path>
-            </svg>
-            İndir
-          </button>
-        </div>
+.timestamp-page__trash {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 6;
+}
 
-        <label class="modal-archive">
-          <input v-model="autoArchive" type="checkbox" />
-          <span class="cbox">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12">
-              <path d="M5 12l5 5L20 7"></path>
-            </svg>
-          </span>
-          <span>Arşive otomatik kaydet</span>
-        </label>
+.timestamp-page__paper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 360px;
+  margin-inline: auto;
+  background: var(--color-surface-empty);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-soft);
+  overflow: hidden;
+}
 
-        <button class="modal-close" type="button" @click="closeCompletionModal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="16" height="16">
-            <path d="M6 6l12 12M18 6L6 18"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </section>
-</template>
+.timestamp-page__paper--busy {
+  border-color: var(--color-border-default);
+}
+
+.timestamp-page__paper-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.timestamp-page__paper-body--pdf {
+  background: var(--color-surface-empty);
+}
+
+.timestamp-page__frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.timestamp-page__stamp-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.timestamp-page__stamp-overlay-gradient {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-stamp-progress);
+  opacity: 0.88;
+  clip-path: inset(0 calc(100% - var(--stamp-p, 0%)) 0 0);
+  transition: clip-path 0.1s linear;
+}
+
+.timestamp-page__stamp-overlay-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(15, 23, 42, 0.12) 100%);
+  clip-path: inset(0 calc(100% - var(--stamp-p, 0%)) 0 0);
+  transition: clip-path 0.1s linear;
+}
+
+.timestamp-page__stamp-overlay-ui {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-on-brand);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.timestamp-page__stamp-pct {
+  font-size: 20px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.timestamp-page__paper-body--loading {
+  padding: 20px 16px 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-empty) 92%, white) 0%,
+    color-mix(in srgb, var(--color-surface-empty) 82%, #e8ecff) 100%
+  );
+}
+
+.timestamp-page__skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.timestamp-page__eq {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  height: 56px;
+  padding: 10px 12px 14px;
+  flex-shrink: 0;
+}
+
+.timestamp-page__eq-bar {
+  flex: 1;
+  max-width: 22px;
+  height: 100%;
+  border-radius: 6px 6px 3px 3px;
+  transform-origin: bottom center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand-secondary) 22%, white) 0%,
+    var(--color-brand-primary) 100%
+  );
+  opacity: 0.92;
+  animation: timestamp-eq 0.85s ease-in-out infinite;
+}
+
+.timestamp-page__eq-bar:nth-child(odd) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand-secondary) 14%, white) 0%,
+    color-mix(in srgb, var(--color-brand-secondary) 88%, #4e46d1) 100%
+  );
+}
+
+@keyframes timestamp-eq {
+  0%,
+  100% {
+    transform: scaleY(0.28);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.timestamp-page__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timestamp-page__file-name {
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.timestamp-page__file-size {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.timestamp-page__file-state {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.timestamp-page__file-state--ready {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+}
+
+.timestamp-page__upload-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.timestamp-page__upload-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.timestamp-page__dock {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(560px, calc(100vw - 32px));
+  padding: 0 8px;
+  pointer-events: none;
+}
+
+.timestamp-page__dock-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 18px;
+  border-radius: 999px;
+  background: var(--gradient-dock);
+  box-shadow:
+    0 12px 40px -8px rgba(91, 76, 220, 0.55),
+    0 4px 14px rgba(50, 40, 120, 0.12);
+  pointer-events: auto;
+}
+
+.timestamp-page__dock-shield {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.timestamp-page__dock-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.timestamp-page__dock-title {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-on-brand);
+  line-height: 1.25;
+}
+
+.timestamp-page__dock-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.timestamp-page__dock-cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: #1f1f2e;
+  background: var(--color-surface-contrast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.timestamp-page__dock-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.timestamp-page__completion {
+  padding: 0 20px 28px;
+  text-align: center;
+}
+
+.timestamp-page__completion-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 40px;
+  margin: 0 0 4px;
+}
+
+.timestamp-page__completion-bar-spacer {
+  flex: 1;
+}
+
+.timestamp-page__close {
+  flex-shrink: 0;
+}
+
+.timestamp-page__celebrate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  min-height: 100px;
+}
+
+.timestamp-page__check-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timestamp-page__ripple {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid rgba(90, 87, 255, 0.45);
+  animation: timestamp-ripple 2.1s ease-out infinite;
+  pointer-events: none;
+}
+
+.timestamp-page__ripple:nth-child(2) {
+  animation-delay: 0.55s;
+}
+
+.timestamp-page__ripple:nth-child(3) {
+  animation-delay: 1.1s;
+}
+
+@keyframes timestamp-ripple {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+.timestamp-page__check-ring {
+  position: relative;
+  z-index: 2;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--color-brand-primary), var(--color-brand-secondary));
+  color: var(--color-text-on-brand);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(90, 87, 255, 0.35);
+}
+
+.timestamp-page__completion-title {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.timestamp-page__completion-sub {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.timestamp-page__completion-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-empty);
+  border: 1px solid var(--color-border-soft);
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.timestamp-page__file-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timestamp-page__file-thumb-name {
+  font-weight: var(--font-weight-medium);
+  font-size: 13px;
+}
+
+.timestamp-page__file-thumb-size {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.timestamp-page__completion-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.timestamp-page__archive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .timestamp-page__dock-inner {
+    flex-wrap: wrap;
+    border-radius: 20px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .timestamp-page__dock-copy {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  .timestamp-page__dock-cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timestamp-page__eq-bar {
+    animation: none;
+    transform: scaleY(0.65);
+  }
+
+  .timestamp-page__ripple {
+    animation: none;
+    opacity: 0;
+  }
+}
+</style>

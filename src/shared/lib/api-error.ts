@@ -1,9 +1,18 @@
 import { AxiosError } from 'axios'
-import type { ApiErrorPayload } from '../types/api'
 
-export const extractApiErrorMessage = (error: unknown, fallbackMessage: string) => {
+
+export const extractApiErrorMessage = (error: unknown, fallbackKey: string): string => {
   if (error instanceof AxiosError) {
-    return (error.response?.data as ApiErrorPayload | undefined)?.message ?? fallbackMessage
+    const backendMessage = error.response?.data?.message
+    if (typeof backendMessage === 'string' && backendMessage.trim()) {
+      return backendMessage
+    }
+
+    const status = error.response?.status
+    if (status === 401) return 'errors.unauthorized'
+    if (status === 413) return 'errors.fileTooLarge'
+    if (status === 408) return 'errors.timeout'
+    if (typeof status === 'number' && status >= 500) return 'errors.server'
   }
-  return fallbackMessage
+  return fallbackKey
 }

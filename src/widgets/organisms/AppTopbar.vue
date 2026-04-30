@@ -1,77 +1,82 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../../features/auth'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { IconButton, SearchInput } from '@/shared/ui'
+import AppBreadcrumbs from './AppBreadcrumbs.vue'
+import LocaleSwitcher from './LocaleSwitcher.vue'
+import UserMenu from './UserMenu.vue'
 
+const { t } = useI18n()
 const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-const emit = defineEmits<{
-  (event: 'toggle-menu'): void
-}>()
 
-const routeLabelMap: Record<string, string> = {
-  dashboard: 'Anasayfa',
-  sign: 'İmzala',
-  timestamp: 'Zaman Damgala',
-  archive: 'Arşiv',
-  profile: 'Profil',
-}
+defineEmits<{ (event: 'toggle-menu'): void }>()
 
-const currentLabel = computed(() => routeLabelMap[String(route.name)] ?? 'Sayfa')
-const initials = computed(() => {
-  const first = authStore.user?.firstName?.[0] ?? ''
-  const last = authStore.user?.lastName?.[0] ?? ''
-  return `${first}${last}`.toUpperCase() || 'U'
-})
+const searchTerm = ref('')
 
-const handleLogout = async () => {
-  await authStore.logout()
-  await router.push({ name: 'login' })
+const onSearch = () => {
+  const term = searchTerm.value.trim()
+  router.push({ name: 'archive', query: term ? { q: term } : {} })
 }
 </script>
 
 <template>
   <header class="topbar">
-    <button class="topbar-menu-btn" type="button" @click="emit('toggle-menu')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-        <path d="M3 6h18"></path>
-        <path d="M3 12h18"></path>
-        <path d="M3 18h18"></path>
-      </svg>
-    </button>
+    <IconButton
+      icon="menu"
+      :label="t('shell.openMenu')"
+      :icon-size="18"
+      class="topbar__menu-btn"
+      @click="$emit('toggle-menu')"
+    />
 
-    <div class="crumbs">
-      <span class="crumb-sub">Çalışma alanın</span>
-      <span class="crumb-sep">/</span>
-      <span class="crumb-active">{{ currentLabel }}</span>
-    </div>
+    <AppBreadcrumbs />
 
-    <div class="topbar-right">
-      <label class="topbar-search-wrap" aria-label="Belge ara">
-        <svg
-          class="topbar-search-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="6.8"></circle>
-          <path d="M16.1 16.1L20 20"></path>
-        </svg>
-        <input class="topbar-search" type="text" placeholder="Belge ara..." />
-      </label>
-
-      <div class="user-menu">
-        <button class="avatar-button" type="button">{{ initials }}</button>
-        <div class="user-dropdown">
-          <RouterLink class="dropdown-item" :to="{ name: 'profile' }">Profil</RouterLink>
-          <button class="dropdown-item" type="button" @click="handleLogout">Çıkış Yap</button>
-        </div>
-      </div>
+    <div class="topbar__right">
+      <SearchInput
+        v-model="searchTerm"
+        :placeholder="t('common.searchDocument')"
+        :aria-label="t('common.searchDocument')"
+        collapse-on-mobile
+        @submit="onSearch"
+      />
+      <LocaleSwitcher />
+      <UserMenu />
     </div>
   </header>
 </template>
+
+<style scoped>
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--topbar-height);
+  padding: 0 24px;
+  background: var(--color-surface-card);
+  border-bottom: 1px solid var(--color-border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar__menu-btn {
+  display: none;
+}
+
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 0 16px;
+  }
+  .topbar__menu-btn {
+    display: inline-flex;
+  }
+}
+</style>

@@ -1,5 +1,7 @@
 :root {
-  --font-family-base: Inter, Avenir, Helvetica, Arial, sans-serif;
+  --font-family-base:
+    'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
   --font-size-body: 14px;
   --line-height-body: 1.5;
   --font-weight-regular: 400;
@@ -9,18 +11,57 @@
   --color-text-primary: #1f1f2e;
   --color-text-secondary: #666985;
   --color-text-muted: #757792;
-  --color-surface-page: #f7f8fc;
+  --color-text-on-brand: #ffffff;
+  --color-white: #ffffff;
+
+  --color-surface-page: #ffffff;
   --color-surface-card: #ffffff;
-  --bg: #f7f8fc;
+  --color-surface-empty: #fbfdff;
+  --color-surface-row-hover: #eef0ff;
+  --color-surface-contrast: #ffffff;
+  --bg: #ffffff;
+
   --color-border-default: #e5e7f0;
   --color-border-soft: #e9e9f3;
   --color-border-input: #dfe2ef;
+  --color-border-dashed: #e2e8f0;
+  --color-switch-off: #d4d4e8;
+
   --color-brand-primary: #5a57ff;
   --color-brand-secondary: #7a57f8;
+  --color-brand-soft: #eef0ff;
+  --color-brand-soft-2: #d8defb;
+  --color-brand-tint: #f4f5ff;
+  --color-info: #6366f1;
+  --color-info-soft: #e8edff;
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
   --color-danger: #d6336c;
+  --color-error: #dc2626;
+  --color-error-soft: #fde2e2;
+  --color-brand-ink: #03081f;
+
+  --gradient-dock: linear-gradient(135deg, #6d5aed 0%, #7b61ff 45%, #6556f5 100%);
+  --gradient-stamp-progress: linear-gradient(
+    90deg,
+    var(--color-brand-primary) 0%,
+    #6366f1 28%,
+    #14b8a6 62%,
+    var(--color-success) 100%
+  );
+
+  --color-sage: #16a34a;
+  --color-sage-soft: #d1fae5;
+  --color-coral: #f97373;
+  --color-coral-soft: #fee2e2;
+  --color-amber: #f59e0b;
+  --color-amber-soft: #fef3c7;
+
   --ink: #0f172a;
   --ink-3: #64748b;
-  --brand: #6366f1;
+  --brand: var(--color-info);
 
   --radius-sm: 10px;
   --radius-md: 12px;
@@ -35,5 +76,14 @@
   --space-7: 24px;
   --space-8: 32px;
 
+  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 6px 24px -8px rgba(20, 30, 40, 0.08), 0 2px 6px rgba(20, 30, 40, 0.04);
+  --shadow-lg: 0 20px 50px -16px rgba(15, 23, 42, 0.18);
+
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  --ring-brand: 0 0 0 3px rgba(90, 87, 255, 0.18);
+  --ring-danger: 0 0 0 3px rgba(214, 51, 108, 0.18);
+
+  --topbar-height: 64px;
+  --sidebar-width: 240px;
 }

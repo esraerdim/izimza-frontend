@@ -1,61 +1,77 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { dashboardApi, type DashboardStats } from '../../../features/dashboard'
-import { StatsCard } from '../../../shared/ui'
+import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useDashboardStore } from '@/features/dashboard'
+import { ARCHIVE_TOTAL_MB } from '@/shared/config'
+import { StatsCard } from '@/shared/ui'
 
-const stats = ref<DashboardStats>({
-  totalSigned: 0,
-  totalTimestamped: 0,
-  remainingCredits: 0,
-  archiveUsageMb: 0,
-})
+const { t } = useI18n()
+const dashboardStore = useDashboardStore()
 
-onMounted(async () => {
-  try {
-    stats.value = await dashboardApi.getStats()
-  } catch {
-    stats.value = {
-      totalSigned: 0,
-      totalTimestamped: 0,
-      remainingCredits: 0,
-      archiveUsageMb: 0,
-    }
-  }
-})
+const stats = computed(() => dashboardStore.stats)
+
+const archivePercent = computed(() =>
+  Math.min(100, Math.round((stats.value.archiveUsageMb / ARCHIVE_TOTAL_MB) * 100)),
+)
+
+onMounted(() => dashboardStore.loadStats())
 </script>
 
 <template>
-  <section class="stats-grid" aria-label="Dashboard istatistik kartlari">
+  <section class="dashboard-stats-grid" :aria-label="t('dashboard.stats.ariaLabel')">
     <StatsCard
-      title="Toplam İmzalama"
+      :title="t('dashboard.stats.totalSign')"
       :value="stats.totalSigned"
-      subtitle="Bu ay 8 belge"
-      trend-text="↑ 12%"
-      skin="metric-brand"
+      :subtitle="t('dashboard.stats.totalSignSub', { count: stats.totalSigned })"
+      variant="metric-brand"
       icon="sign"
     />
     <StatsCard
-      title="Arşivlenen"
+      :title="t('dashboard.stats.archived')"
       :value="stats.totalTimestamped"
-      subtitle="9 zaman damgası"
-      trend-text="↑ 4 yeni"
-      skin="metric-coral"
-      icon="archive"
+      :subtitle="t('dashboard.stats.archivedSub', { count: stats.totalTimestamped })"
+      variant="metric-coral"
+      icon="archive-stack"
     />
     <StatsCard
-      title="Kalan Kontör"
+      :title="t('dashboard.stats.remainingCredits')"
       :value="stats.remainingCredits"
-      subtitle="13 Mayıs'ta yenilenir"
-      skin="metric-sage"
+      :subtitle="t('dashboard.stats.remainingCreditsSub', { count: stats.remainingCredits })"
+      variant="metric-sage"
       icon="credit"
     />
     <StatsCard
-      title="Arşiv Alanı"
+      :title="t('dashboard.stats.archiveSpace')"
       :value="`${stats.archiveUsageMb}MB`"
-      subtitle="1024 MB içinden"
-      trend-text="%26 dolu"
-      skin="metric-amber"
+      :subtitle="
+        t('dashboard.stats.archiveSpaceSub', {
+          used: stats.archiveUsageMb,
+          total: ARCHIVE_TOTAL_MB,
+        })
+      "
+      :trend-text="t('dashboard.stats.archiveSpaceTrend', { percent: archivePercent })"
+      variant="metric-amber"
       icon="box"
     />
   </section>
 </template>
+
+<style scoped>
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1080px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

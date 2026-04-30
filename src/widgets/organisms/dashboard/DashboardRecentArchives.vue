@@ -1,127 +1,125 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { dashboardApi, type DashboardDocument } from '../../../features/dashboard'
-import { DocumentsTable } from '../../../shared/ui'
+import { useI18n } from 'vue-i18n'
+import { useDocumentTableActions, useDocumentsStore } from '@/entities/document'
+import { DocumentDeleteConfirmModal } from '@/features/documents'
+import { BaseCard, DocumentsTable, Icon } from '@/shared/ui'
 
 const router = useRouter()
-const documents = ref<DashboardDocument[]>([])
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001'
+const { t } = useI18n()
+const documentsStore = useDocumentsStore()
+const {
+  formatDate,
+  actionLabel,
+  actionTone,
+  canOpenDocument,
+  handleView,
+  handleDownload,
+  handleEmailSend,
+  handleDelete,
+  deleteConfirmOpen,
+  deleteTarget,
+  isDeletingDocument,
+  closeDeleteConfirm,
+  confirmPendingDelete,
+} = useDocumentTableActions()
 
-const toAbsolutePreviewUrl = (rawUrl?: string) => {
-  if (!rawUrl) return ''
-  if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith('blob:')) return rawUrl
-  if (rawUrl.startsWith('/')) return `${apiBaseUrl}${rawUrl}`
-  return `${apiBaseUrl}/${rawUrl}`
-}
+const listedDocuments = computed(() => documentsStore.visibleRecentDocuments)
+const isLoading = computed(() => documentsStore.isLoadingRecent)
 
-const formatDate = (value: string) =>
-  new Date(value).toLocaleString('tr-TR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+const tableLabels = computed(() => ({
+  file: t('documents.table.file'),
+  date: t('documents.table.date'),
+  action: t('documents.table.action'),
+  viewAction: t('documents.table.viewAction'),
+  downloadAction: t('documents.table.downloadAction'),
+  otherActions: t('documents.table.otherActions'),
+  emailSend: t('common.emailSend'),
+  delete: t('common.delete'),
+  emptyTitle: t('dashboard.recentArchives.emptyTitle'),
+  emptyDescription: t('dashboard.recentArchives.emptyDescription'),
+}))
 
-const actionLabel = (action: string) => {
-  if (action === 'timestamped') return 'Zaman Damgası'
-  if (action === 'signed') return 'İmzalandı'
-  if (action === 'shared') return 'Paylaşıldı'
-  return 'Yüklendi'
-}
+const goArchivePage = () => router.push({ name: 'archive' })
 
-const actionTone = (action: string) => {
-  if (action === 'timestamped') return 'stamp'
-  if (action === 'signed') return 'signed'
-  if (action === 'shared') return 'shared'
-  return 'upload'
-}
-
-const canPreviewInApp = (document: DashboardDocument) =>
-  Boolean(document.previewUrl) && /\.pdf($|[?#])/i.test(document.previewUrl ?? '')
-
-const listedDocuments = computed(() =>
-  documents.value.filter((document) => canPreviewInApp(document)).slice(0, 5),
-)
-
-const loadDocuments = async () => {
-  try {
-    documents.value = await dashboardApi.getRecentDocuments()
-  } catch {
-    documents.value = []
-  }
-}
-
-const handleView = (document: DashboardDocument) => {
-  const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
-  if (!previewUrl) return
-  window.open(previewUrl, '_blank', 'noopener,noreferrer')
-}
-
-const handleDownload = (doc: DashboardDocument) => {
-  const previewUrl = toAbsolutePreviewUrl(doc.previewUrl)
-  if (!previewUrl) return
-  const link = window.document.createElement('a')
-  link.href = previewUrl
-  link.download = doc.name
-  link.target = '_blank'
-  link.rel = 'noopener noreferrer'
-  link.click()
-}
-
-const handleEmailSend = (document: DashboardDocument) => {
-  const previewUrl = toAbsolutePreviewUrl(document.previewUrl)
-  const subject = encodeURIComponent(`Belge paylasimi: ${document.name}`)
-  const body = encodeURIComponent(`Merhaba,\n\nBelgeyi buradan goruntuleyebilirsiniz:\n${previewUrl}`)
-  window.location.href = `mailto:?subject=${subject}&body=${body}`
-}
-
-const handleDelete = async (document: DashboardDocument) => {
-  await dashboardApi.deleteDocument(document.id)
-  await loadDocuments()
-  window.dispatchEvent(new Event('dashboard:data:refresh'))
-}
-
-const goArchivePage = () => {
-  router.push({ name: 'archive' })
-}
-
-onMounted(() => {
-  loadDocuments()
-  window.addEventListener('dashboard:data:refresh', loadDocuments)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('dashboard:data:refresh', loadDocuments)
-})
+onMounted(() => documentsStore.loadRecent())
 </script>
 
 <template>
-  <section class="card archive-table-card">
-    <div class="archive-head">
+  <BaseCard padding="md" as="section" class="dashboard-recent">
+    <header class="dashboard-recent__head">
       <div>
-        <h2 class="card-title">Son Arşivlenen Belgeler</h2>
-        <p class="card-sub">Zaman damgası ya da imza eklenmiş dosyalar</p>
+        <h2 class="dashboard-recent__title">{{ t('dashboard.recentArchives.title') }}</h2>
+        <p class="dashboard-recent__sub">{{ t('dashboard.recentArchives.sub') }}</p>
       </div>
-      <button class="link-btn" type="button" @click="goArchivePage">
-        Tümünü Gör
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
-          <path d="M5 12h14M13 5l7 7-7 7"></path>
-        </svg>
+      <button class="dashboard-recent__link" type="button" @click="goArchivePage">
+        {{ t('dashboard.recentArchives.viewAll') }}
+        <Icon name="arrow-right" :size="13" />
       </button>
-    </div>
+    </header>
 
     <DocumentsTable
       :documents="listedDocuments"
+      :labels="tableLabels"
       :format-date="formatDate"
       :action-label="actionLabel"
       :action-tone="actionTone"
-      :can-open-document="canPreviewInApp"
+      :can-open-document="canOpenDocument"
+      :is-loading="isLoading"
       @view="handleView"
       @download="handleDownload"
       @email="handleEmailSend"
       @delete="handleDelete"
     />
-  </section>
+    <DocumentDeleteConfirmModal
+      :open="deleteConfirmOpen"
+      :file-name="deleteTarget?.name ?? ''"
+      :loading="isDeletingDocument"
+      @close="closeDeleteConfirm"
+      @confirm="confirmPendingDelete"
+    />
+  </BaseCard>
 </template>
+
+<style scoped>
+.dashboard-recent__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.dashboard-recent__title {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.dashboard-recent__sub {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.dashboard-recent__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-brand-primary);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.dashboard-recent__link:hover {
+  background: var(--color-brand-soft);
+}
+</style>

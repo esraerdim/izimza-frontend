@@ -15,15 +15,205 @@
       "lastName": "erdim",
       "phone": "",
       "password": "oauth-user"
+    },
+    {
+      "id": 3,
+      "email": "digital@boosmart.com",
+      "firstName": "Boosmart",
+      "lastName": "Marketing Intelligence Agency",
+      "phone": "",
+      "password": "oauth-user"
     }
   ],
   "dashboardStats": {
     "totalSigned": 24,
-    "totalTimestamped": 24,
-    "remainingCredits": 2,
+    "totalTimestamped": 33,
+    "remainingCredits": 8,
     "archiveUsageMb": 271
   },
   "activities": [
+    {
+      "id": 50,
+      "type": "timestamped",
+      "fileName": "ai_report_2026-03-24 (3).pdf",
+      "title": "ai_report_2026-03-24 (3).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T14:24:05.546Z",
+      "ownerId": 1
+    },
+    {
+      "id": 49,
+      "type": "uploaded",
+      "fileName": "ai_report_2026-03-24 (3).pdf",
+      "title": "ai_report_2026-03-24 (3).pdf yuklendi",
+      "createdAt": "2026-04-30T14:24:01.126Z",
+      "ownerId": 1
+    },
+    {
+      "id": 48,
+      "type": "timestamped",
+      "fileName": "ai_report_2026-03-25 (2).pdf",
+      "title": "ai_report_2026-03-25 (2).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T12:40:42.792Z",
+      "ownerId": 1
+    },
+    {
+      "id": 47,
+      "type": "uploaded",
+      "fileName": "ai_report_2026-03-25 (2).pdf",
+      "title": "ai_report_2026-03-25 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T12:40:40.460Z",
+      "ownerId": 1
+    },
+    {
+      "id": 46,
+      "title": "ai_report_2026-03-25 (1).pdf yuklendi",
+      "createdAt": "2026-04-30T12:15:06.806Z",
+      "ownerId": 1
+    },
+    {
+      "id": 45,
+      "title": "ai_report_2026-03-24 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T12:10:32.767Z",
+      "ownerId": 1
+    },
+    {
+      "id": 44,
+      "title": "ai_report_2026-03-24 (3).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T12:05:00.810Z",
+      "ownerId": 1
+    },
+    {
+      "id": 43,
+      "title": "ai_report_2026-03-24 (3).pdf yuklendi",
+      "createdAt": "2026-04-30T12:04:58.739Z",
+      "ownerId": 1
+    },
+    {
+      "id": 42,
+      "title": "ai_report_2026-04-06 (1).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T12:01:24.319Z",
+      "ownerId": 1
+    },
+    {
+      "id": 41,
+      "title": "ai_report_2026-04-06 (1).pdf yuklendi",
+      "createdAt": "2026-04-30T12:01:22.866Z",
+      "ownerId": 1
+    },
+    {
+      "id": 40,
+      "title": "ai_report_2026-03-24 (3).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T12:00:19.159Z",
+      "ownerId": 1
+    },
+    {
+      "id": 39,
+      "title": "ai_report_2026-03-24 (3).pdf yuklendi",
+      "createdAt": "2026-04-30T12:00:14.530Z",
+      "ownerId": 1
+    },
+    {
+      "id": 38,
+      "title": "ai_report_2026-03-25 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T11:54:33.627Z",
+      "ownerId": 1
+    },
+    {
+      "id": 37,
+      "title": "ai_report_2026-04-06 (1).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T11:54:14.133Z",
+      "ownerId": 1
+    },
+    {
+      "id": 36,
+      "title": "ai_report_2026-04-06 (1).pdf yuklendi",
+      "createdAt": "2026-04-30T11:54:12.920Z",
+      "ownerId": 1
+    },
+    {
+      "id": 35,
+      "title": "ai_report_2026-03-24 (1).pdf yuklendi",
+      "createdAt": "2026-04-30T11:49:53.332Z",
+      "ownerId": 1
+    },
+    {
+      "id": 34,
+      "title": "ai_report_2026-03-24.pdf yuklendi",
+      "createdAt": "2026-04-30T11:49:38.749Z",
+      "ownerId": 1
+    },
+    {
+      "id": 33,
+      "title": "ai_report_2026-03-24.pdf silindi",
+      "createdAt": "2026-04-30T11:46:26.448Z",
+      "ownerId": 1
+    },
+    {
+      "id": 32,
+      "title": "ai_report_2026-03-24.pdf yuklendi",
+      "createdAt": "2026-04-30T11:45:27.302Z",
+      "ownerId": 1
+    },
+    {
+      "id": 31,
+      "title": "ai_report_2026-03-24 (2).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T11:42:17.195Z",
+      "ownerId": 1
+    },
+    {
+      "id": 30,
+      "title": "ai_report_2026-03-24 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T11:40:19.347Z",
+      "ownerId": 1
+    },
+    {
+      "id": 29,
+      "title": "ai_report_2026-03-24 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T11:34:08.931Z",
+      "ownerId": 1
+    },
+    {
+      "id": 28,
+      "title": "ai_report_2026-03-24 (4).pdf zaman damgalandi",
+      "createdAt": "2026-04-30T11:33:09.978Z",
+      "ownerId": 1
+    },
+    {
+      "id": 27,
+      "title": "ai_report_2026-03-24 (4).pdf yuklendi",
+      "createdAt": "2026-04-30T11:33:07.555Z",
+      "ownerId": 1
+    },
+    {
+      "id": 26,
+      "title": "ai_report_2026-03-24 (4).pdf yuklendi",
+      "createdAt": "2026-04-30T11:32:24.748Z",
+      "ownerId": 1
+    },
+    {
+      "id": 25,
+      "title": "ai_report_2026-03-24 (2).pdf yuklendi",
+      "createdAt": "2026-04-30T11:31:13.890Z",
+      "ownerId": 1
+    },
+    {
+      "id": 24,
+      "title": "05.03.2026.pdf yuklendi",
+      "createdAt": "2026-04-30T11:30:28.673Z",
+      "ownerId": 1
+    },
+    {
+      "id": 23,
+      "title": "05.03.2026.pdf zaman damgalandi",
+      "createdAt": "2026-04-30T11:23:59.870Z",
+      "ownerId": 1
+    },
+    {
+      "id": 22,
+      "title": "05.03.2026.pdf yuklendi",
+      "createdAt": "2026-04-30T11:23:51.398Z",
+      "ownerId": 1
+    },
     {
       "id": 21,
       "title": "Certificato-uExfTP.pdf zaman damgalandi",
@@ -131,6 +321,168 @@
     }
   ],
   "documents": [
+    {
+      "id": 35,
+      "name": "ai_report_2026-03-24 (3).pdf",
+      "sizeMb": 38.33,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T14:24:05.546Z",
+      "previewUrl": "/mock-files/1777559040950-ai_report_2026-03-24-3.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 34,
+      "name": "ai_report_2026-03-25 (2).pdf",
+      "sizeMb": 28.47,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T12:40:42.792Z",
+      "previewUrl": "/mock-files/1777552840367-ai_report_2026-03-25-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 33,
+      "name": "ai_report_2026-03-25 (1).pdf",
+      "sizeMb": 29.2,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T12:15:06.806Z",
+      "previewUrl": "/mock-files/1777551306505-ai_report_2026-03-25-1.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 32,
+      "name": "ai_report_2026-03-24 (2).pdf",
+      "sizeMb": 28.88,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T12:10:32.767Z",
+      "previewUrl": "/mock-files/1777551032642-ai_report_2026-03-24-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 31,
+      "name": "ai_report_2026-03-24 (3).pdf",
+      "sizeMb": 38.33,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T12:05:00.810Z",
+      "previewUrl": "/mock-files/1777550698567-ai_report_2026-03-24-3.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 30,
+      "name": "ai_report_2026-04-06 (1).pdf",
+      "sizeMb": 28.57,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T12:01:24.319Z",
+      "previewUrl": "/mock-files/1777550482778-ai_report_2026-04-06-1.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 29,
+      "name": "ai_report_2026-03-24 (3).pdf",
+      "sizeMb": 38.33,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T12:00:19.159Z",
+      "previewUrl": "/mock-files/1777550414344-ai_report_2026-03-24-3.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 28,
+      "name": "ai_report_2026-03-25 (2).pdf",
+      "sizeMb": 28.47,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:54:33.627Z",
+      "previewUrl": "/mock-files/1777550073350-ai_report_2026-03-25-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 27,
+      "name": "ai_report_2026-04-06 (1).pdf",
+      "sizeMb": 28.57,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T11:54:14.133Z",
+      "previewUrl": "/mock-files/1777550052725-ai_report_2026-04-06-1.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 26,
+      "name": "ai_report_2026-03-24 (1).pdf",
+      "sizeMb": 0.05,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:49:53.332Z",
+      "previewUrl": "/mock-files/1777549793199-ai_report_2026-03-24-1.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 25,
+      "name": "ai_report_2026-03-24.pdf",
+      "sizeMb": 0.01,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:49:38.749Z",
+      "previewUrl": "/mock-files/1777549778748-ai_report_2026-03-24.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 24,
+      "name": "ai_report_2026-03-24 (2).pdf",
+      "sizeMb": 28.88,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T11:42:17.195Z",
+      "previewUrl": "/mock-files/1777549218978-ai_report_2026-03-24-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 23,
+      "name": "ai_report_2026-03-24 (2).pdf",
+      "sizeMb": 28.88,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:34:08.931Z",
+      "previewUrl": "/mock-files/1777548848796-ai_report_2026-03-24-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 22,
+      "name": "ai_report_2026-03-24 (4).pdf",
+      "sizeMb": 33.81,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T11:33:09.978Z",
+      "previewUrl": "/mock-files/1777548787419-ai_report_2026-03-24-4.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 21,
+      "name": "ai_report_2026-03-24 (4).pdf",
+      "sizeMb": 33.81,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:32:24.748Z",
+      "previewUrl": "/mock-files/1777548744622-ai_report_2026-03-24-4.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 20,
+      "name": "ai_report_2026-03-24 (2).pdf",
+      "sizeMb": 28.88,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:31:13.890Z",
+      "previewUrl": "/mock-files/1777548673745-ai_report_2026-03-24-2.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 19,
+      "name": "05.03.2026.pdf",
+      "sizeMb": 0.13,
+      "action": "uploaded",
+      "createdAt": "2026-04-30T11:30:28.673Z",
+      "previewUrl": "/mock-files/1777548628667-05.03.2026.pdf",
+      "ownerId": 1
+    },
+    {
+      "id": 18,
+      "name": "05.03.2026.pdf",
+      "sizeMb": 0.13,
+      "action": "timestamped",
+      "createdAt": "2026-04-30T11:23:59.870Z",
+      "previewUrl": "/mock-files/1777548231388-05.03.2026.pdf",
+      "ownerId": 1
+    },
     {
       "id": 17,
       "name": "Certificato-uExfTP.pdf",

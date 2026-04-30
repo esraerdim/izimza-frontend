@@ -1,127 +1,72 @@
-# izimza-frontend
 
-Vue 3 + TypeScript tabanli frontend case projesi.
 
-## Calistirma
+# izimza Frontend
 
-```bash
+Bu proje, Vue 3, TypeScript ve Pinia kullanılarak geliştirilmiş iZimza arayüz uygulamasıdır.
+
+## Kurulum
+
+Projeyi lokal ortamda çalıştırmak için aşağıdaki adımlar izlenmelidir:
+
+```bash id="kurulum1"
 npm install
 npm run dev:api
 npm run dev
 ```
 
-- Frontend: `http://localhost:5173`
-- Fake API: `http://localhost:3001`
+* Frontend: `http://localhost:5173`
+* Mock API: `http://localhost:3001`
 
-## Demo Hesap
+Opsiyonel olarak demo kullanıcı bilgileri ile giriş yapılabilir:
 
-- Email: `demo@izimza.com`
-- Sifre: `Demo123!`
-
-## OAuth2 Girisi (Zorunlu Madde)
-
-Proje OAuth2 Authorization Code + PKCE akisini destekler.
-
-1. `.env.example` dosyasini `.env` olarak kopyalayin.
-2. Provider degerlerini doldurun (`VITE_OAUTH_*`).
-3. Login ekraninda `OAuth2 ile Giris Yap` butonu gorunur.
-
-### Google ile OAuth2 (onerilen)
-
-Bu projede Google girisini Auth0 uzerinden acmak en stabil yoldur:
-
-1. Auth0 > Authentication > Social > Google baglantisini aktif edin.
-2. Auth0 Application (SPA) ayarlarinda callback olarak `http://localhost:5173/auth/callback` tanimlayin.
-3. `.env` dosyaniza su degerleri girin:
-
-```bash
-VITE_OAUTH_AUTHORIZE_URL=https://YOUR_AUTH0_DOMAIN/authorize
-VITE_OAUTH_TOKEN_URL=https://YOUR_AUTH0_DOMAIN/oauth/token
-VITE_OAUTH_USERINFO_URL=https://YOUR_AUTH0_DOMAIN/userinfo
-VITE_OAUTH_CLIENT_ID=YOUR_AUTH0_CLIENT_ID
-VITE_OAUTH_REDIRECT_URI=http://localhost:5173/auth/callback
-VITE_OAUTH_SCOPE=openid profile email
-VITE_OAUTH_CONNECTION=google-oauth2
-VITE_OAUTH_PROMPT=select_account
-VITE_OAUTH_BUTTON_LABEL=Google ile Giris Yap
-VITE_GOOGLE_GSI_CLIENT_ID=YOUR_GOOGLE_WEB_CLIENT_ID
+```bash id="kurulum2"
+VITE_DEMO_EMAIL=demo@izimza.com
+VITE_DEMO_PASSWORD=Demo123!
 ```
 
-Frontend callback route:
+## Komutlar
 
-- `/auth/callback`
+Projede kullanılan temel komutlar aşağıda listelenmiştir:
 
-Backend session bridge endpoint:
+| Komut                     | Açıklama                                        |
+| ------------------------- | ----------------------------------------------- |
+| `npm run dev`             | Vite geliştirme sunucusunu başlatır             |
+| `npm run dev:api`         | json-server ve middleware ile mock API başlatır |
+| `npm run build`           | Production build oluşturur                      |
+| `npm run preview`         | Build çıktısını lokal ortamda sunar             |
+| `npm run typecheck`       | TypeScript tip kontrolü yapar                   |
+| `npm run lint`            | ESLint ile kod kalitesini analiz eder           |
+| `npm run format`          | Prettier ile kod formatlama işlemi yapar        |
+| `npm run test`            | Vitest ile birim testleri çalıştırır            |
+| `npm run test:watch`      | Testleri izleme modunda çalıştırır              |
+| `npm run test:coverage`   | Test çalıştırır ve coverage raporu oluşturur    |
+| `npm run storybook`       | Storybook geliştirme ortamını başlatır          |
+| `npm run build-storybook` | Storybook için statik build oluşturur           |
 
-- `POST /api/auth/oauth-login`
-  - Body: `{ "email": "...", "firstName": "...", "lastName": "..." }`
-  - OAuth provider'dan donen profil emaili ile local user bulunur/olusturulur.
-  - Basarili olunca mevcut sistemdeki `HttpOnly` session cookie set edilir.
+## Coverage Nedir, Ne İşe Yarar?
 
-## Fake API Mimarisi
+`npm run test:coverage` komutu, testlerin çalıştırılması sırasında hangi dosya ve satırların test edildiğini analiz eder ve raporlar.
 
-`json-server`, `db.json` dosyasini veritabani gibi kullanir ve yazma islemlerini bu dosyaya kaydeder.
+Bu kapsamda:
 
-- `db.json`: seed/mock veriler
-- `api/middleware.cjs`: auth ve custom endpoint davranislari
-- `package.json > dev:api`: json-server + middleware komutu
+* Konsol çıktısında özet metrikler sunulur (`Statements`, `Branches`, `Functions`, `Lines`)
+* `coverage/index.html` altında detaylı bir HTML rapor oluşturulur
+* `coverage/` klasörü yalnızca lokal analiz amacıyla kullanılır ve versiyon kontrolüne dahil edilmez
 
-## Frontend Architecture
+Bu raporlar, test kapsamındaki eksikliklerin tespit edilmesi ve test stratejisinin iyileştirilmesi açısından önemlidir.
 
-Proje `Atomic Design + feature-oriented` yaklasimla kuruldu:
+## Proje Yapısı (Özet)
 
-- `app/`: bootstrap, provider, global style
-- `pages/`: route girisleri
-- `widgets/`: page-level buyuk bloklar (organism/template)
-- `features/`: domain/use-case modul sinirlari
-- `shared/`: ortak ui/api/lib/type katmani
+```text id="yapi1"
+src/
+  app/
+  pages/
+  widgets/
+  features/
+  entities/
+  shared/
+```
 
-Detayli aciklama: `src/ARCHITECTURE.md`
+Daha detaylı mimari açıklama için: `src/ARCHITECTURE.md`
 
-## Endpointler
 
-### Auth
-
-- `POST /api/auth/login`
-  - Body: `{ "email": "...", "password": "..." }`
-  - Response: `{ "user": {...} }`
-  - Not: Basarili giriste server `HttpOnly` session cookie set eder.
-- `GET /api/auth/me`
-  - Header gerekmez, cookie otomatik gider (`withCredentials: true`)
-  - Response: kullanici profili
-- `POST /api/auth/logout`
-  - Session cookieyi temizler.
-- `POST /api/auth/oauth-login`
-  - OAuth callbackten gelen profile gore local session olusturur.
-
-### Dashboard / Belgeler
-
-- `GET /api/dashboard/stats`
-- `GET /api/activities/list`
-- `GET /documents` (json-server default endpoint)
-- `GET /api/documents/recent`
-
-### Profil
-
-- `GET /api/profile/me`
-- `PATCH /api/profile/me`
-
-### Timestamp
-
-- `POST /api/timestamp/upload`
-  - Body: `{ "fileName": "ornek.pdf", "fileSizeMb": 2.3 }`
-  - Eylem:
-    - `documents` listesine yeni kayit ekler
-    - `activities` listesine olay ekler
-    - `dashboardStats.totalTimestamped` degerini artirir
-    - `dashboardStats.remainingCredits` degerini azaltir
-
-## Frontend Auth Akisi
-
-- Login formu `POST /api/auth/login` cagirir.
-- Donen session `HttpOnly` cookie olarak tutulur (frontend JS cookieye erisemez).
-- Axios tum istekleri `withCredentials: true` ile gonderir.
-- Router guard:
-  - `GET /api/auth/me` ile session kontrol eder.
-  - Session yoksa korumali sayfadan `/login`e yonlendirir.
-  - Session varsa `/login`den dashboarda yonlendirir.

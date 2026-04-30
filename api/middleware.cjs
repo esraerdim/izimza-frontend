@@ -5,6 +5,15 @@ const multer = require('multer')
 const DB_PATH = path.join(process.cwd(), 'db.json')
 const MOCK_FILES_DIR = path.join(process.cwd(), 'public', 'mock-files')
 
+
+const OAUTH_PASSWORD_MARKER = 'oauth-user'
+
+const DEMO_ADMIN_USER_ID = 1
+
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+const PASSWORD_MIN_LENGTH = 8
+const DEFAULT_REMAINING_CREDITS = 10
+
 const readDb = () => {
   const raw = fs.readFileSync(DB_PATH, 'utf-8')
   return JSON.parse(raw)
@@ -59,15 +68,17 @@ const upload = multer({
     },
   }),
   limits: {
-    fileSize: 50 * 1024 * 1024,
+    fileSize: MAX_UPLOAD_BYTES,
   },
 })
 
 const sanitizeUser = (user) => {
   if (!user) return null
-  //password kısmını ayırmak için
   const { password, ...safeUser } = user
-  return safeUser
+  return {
+    ...safeUser,
+    isOAuthUser: password === OAUTH_PASSWORD_MARKER,
+  }
 }
 
 const SESSION_COOKIE_NAME = 'izimza_session'
@@ -99,6 +110,11 @@ const sendJson = (res, statusCode, payload) => {
   res.end(JSON.stringify(payload))
 }
 
+const requestPath = (req) => {
+  const raw = String(req.originalUrl || req.url || req.path || '')
+  return raw.split('?')[0].replace(/\/+$/, '') || '/'
+}
+
 const requireAuth = (req, res) => {
   const userId = getUserIdFromSessionCookie(req.headers.cookie)
   if (!userId) {
@@ -110,10 +126,47 @@ const requireAuth = (req, res) => {
   return userId
 }
 
-const createUploadedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
+
+const isOwnedByUser = (item, userId) => {
+  if (item.ownerId == null) {
+    return userId === DEMO_ADMIN_USER_ID
+  }
+  return Number(item.ownerId) === Number(userId)
+}
+
+const hasRemainingCredits = (db, userId) => {
+  if (userId === DEMO_ADMIN_USER_ID) {
+    const remain = Number(db.dashboardStats?.remainingCredits ?? 0)
+    return remain > 0
+  }
+  const userTimestampedCount = db.documents.filter(
+    (item) => isOwnedByUser(item, userId) && item.action === 'timestamped',
+  ).length
+  return Math.max(0, DEFAULT_REMAINING_CREDITS - userTimestampedCount) > 0
+}
+
+const buildActivity = ({ db, type, fileName, ownerId, createdAt }) => {
+  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
+  const suffixMap = {
+    uploaded: 'yuklendi',
+    timestamped: 'zaman damgalandi',
+    signed: 'imzalandi',
+    shared: 'paylasildi',
+    deleted: 'silindi',
+  }
+  return {
+    id: nextActivityId,
+    type,
+    fileName,
+    title: `${fileName} ${suffixMap[type] ?? ''}`.trim(),
+    createdAt,
+    ownerId,
+  }
+}
+
+const createUploadedDocument = ({ fileName, fileSizeMb, previewUrl, ownerId }) => {
   const db = readDb()
   const nextDocId = db.documents.length ? Math.max(...db.documents.map((d) => d.id)) + 1 : 1
-  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
   const createdAt = new Date().toISOString()
 
   const document = {
@@ -123,23 +176,19 @@ const createUploadedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
     action: 'uploaded',
     createdAt,
     previewUrl,
+    ownerId,
   }
 
   db.documents.unshift(document)
-  db.activities.unshift({
-    id: nextActivityId,
-    title: `${fileName} yuklendi`,
-    createdAt,
-  })
+  db.activities.unshift(buildActivity({ db, type: 'uploaded', fileName, ownerId, createdAt }))
   writeDb(db)
 
   return document
 }
 
-const createTimestampedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
+const createTimestampedDocument = ({ fileName, fileSizeMb, previewUrl, ownerId }) => {
   const db = readDb()
   const nextDocId = db.documents.length ? Math.max(...db.documents.map((d) => d.id)) + 1 : 1
-  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
   const createdAt = new Date().toISOString()
 
   const document = {
@@ -149,14 +198,11 @@ const createTimestampedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
     action: 'timestamped',
     createdAt,
     previewUrl,
+    ownerId,
   }
 
   db.documents.unshift(document)
-  db.activities.unshift({
-    id: nextActivityId,
-    title: `${fileName} zaman damgalandi`,
-    createdAt,
-  })
+  db.activities.unshift(buildActivity({ db, type: 'timestamped', fileName, ownerId, createdAt }))
   db.dashboardStats.totalTimestamped += 1
   db.dashboardStats.remainingCredits = Math.max(0, db.dashboardStats.remainingCredits - 1)
   writeDb(db)
@@ -164,24 +210,24 @@ const createTimestampedDocument = ({ fileName, fileSizeMb, previewUrl }) => {
   return document
 }
 
-const markDocumentAsTimestamped = (documentId) => {
+const markDocumentAsTimestamped = (documentId, ownerId) => {
   const db = readDb()
-  const documentIndex = db.documents.findIndex((item) => item.id === documentId)
+  const documentIndex = db.documents.findIndex(
+    (item) => item.id === documentId && isOwnedByUser(item, ownerId),
+  )
   if (documentIndex === -1) return null
 
   const existing = db.documents[documentIndex]
+  const createdAt = new Date().toISOString()
   db.documents[documentIndex] = {
     ...existing,
     action: 'timestamped',
-    createdAt: new Date().toISOString(),
+    createdAt,
   }
 
-  const nextActivityId = db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1
-  db.activities.unshift({
-    id: nextActivityId,
-    title: `${existing.name} zaman damgalandi`,
-    createdAt: db.documents[documentIndex].createdAt,
-  })
+  db.activities.unshift(
+    buildActivity({ db, type: 'timestamped', fileName: existing.name, ownerId, createdAt }),
+  )
   db.dashboardStats.totalTimestamped += 1
   db.dashboardStats.remainingCredits = Math.max(0, db.dashboardStats.remainingCredits - 1)
   writeDb(db)
@@ -189,17 +235,21 @@ const markDocumentAsTimestamped = (documentId) => {
   return db.documents[documentIndex]
 }
 
-const deleteDocumentById = (documentId) => {
+const deleteDocumentById = (documentId, ownerId) => {
   const db = readDb()
-  const existingDoc = db.documents.find((item) => item.id === documentId)
+  const existingDoc = db.documents.find((item) => item.id === documentId && isOwnedByUser(item, ownerId))
   if (!existingDoc) return false
 
   db.documents = db.documents.filter((item) => item.id !== documentId)
-  db.activities.unshift({
-    id: db.activities.length ? Math.max(...db.activities.map((a) => a.id)) + 1 : 1,
-    title: `${existingDoc.name} silindi`,
-    createdAt: new Date().toISOString(),
-  })
+  db.activities.unshift(
+    buildActivity({
+      db,
+      type: 'deleted',
+      fileName: existingDoc.name,
+      ownerId,
+      createdAt: new Date().toISOString(),
+    }),
+  )
   writeDb(db)
 
   if (existingDoc.previewUrl?.startsWith('/mock-files/')) {
@@ -225,7 +275,9 @@ module.exports = (req, res, next) => {
     return res.end()
   }
 
-  if (req.method === 'POST' && req.path === '/api/auth/login') {
+  const reqPath = requestPath(req)
+
+  if (req.method === 'POST' && reqPath === '/api/auth/login') {
     const { email, password } = req.body ?? {}
     const db = readDb()
     const user = db.users.find((item) => item.email === email && item.password === password)
@@ -242,7 +294,7 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { user: sanitizeUser(user) })
   }
 
-  if (req.method === 'POST' && req.path === '/api/auth/oauth-login') {
+  if (req.method === 'POST' && reqPath === '/api/auth/oauth-login') {
     const { email, firstName, lastName } = req.body ?? {}
     if (!email) {
       return sendJson(res, 400, { message: 'OAuth profile email alani zorunludur.' })
@@ -260,10 +312,18 @@ module.exports = (req, res, next) => {
         firstName: firstName || 'OAuth',
         lastName: lastName || 'Kullanici',
         phone: '',
-        password: 'oauth-user',
+        password: OAUTH_PASSWORD_MARKER,
       }
       db.users.push(user)
       writeDb(db)
+    } else {
+      const updatedFirstName = firstName ? String(firstName).trim() : user.firstName
+      const updatedLastName = lastName ? String(lastName).trim() : user.lastName
+      if (updatedFirstName !== user.firstName || updatedLastName !== user.lastName) {
+        user.firstName = updatedFirstName
+        user.lastName = updatedLastName
+        writeDb(db)
+      }
     }
 
     res.setHeader(
@@ -273,7 +333,7 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { user: sanitizeUser(user) })
   }
 
-  if (req.method === 'POST' && req.path === '/api/auth/logout') {
+  if (req.method === 'POST' && reqPath === '/api/auth/logout') {
     res.setHeader(
       'Set-Cookie',
       `${SESSION_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`,
@@ -281,7 +341,7 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { message: 'Cikis basarili.' })
   }
 
-  if (req.path === '/api/auth/me') {
+  if (reqPath === '/api/auth/me') {
     const userId = requireAuth(req, res)
     if (!userId) return
 
@@ -293,43 +353,81 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, sanitizeUser(user))
   }
 
-  if (req.method === 'GET' && req.path === '/api/dashboard/stats') {
+  if (req.method === 'GET' && reqPath === '/api/dashboard/stats') {
     const userId = requireAuth(req, res)
     if (!userId) return
     const db = readDb()
-    return sendJson(res, 200, db.dashboardStats)
+    const ownedDocuments = db.documents.filter((item) => isOwnedByUser(item, userId))
+    const totalSigned = ownedDocuments.filter((item) => item.action === 'signed').length
+    const totalTimestamped = ownedDocuments.filter((item) => item.action === 'timestamped').length
+    const archiveUsageMb = Math.round(
+      ownedDocuments.reduce((sum, item) => sum + Number(item.sizeMb || 0), 0),
+    )
+    const remainingCredits =
+      userId === DEMO_ADMIN_USER_ID && typeof db.dashboardStats?.remainingCredits === 'number'
+        ? db.dashboardStats.remainingCredits
+        : Math.max(0, DEFAULT_REMAINING_CREDITS - totalTimestamped)
+    return sendJson(res, 200, {
+      totalSigned,
+      totalTimestamped,
+      remainingCredits,
+      archiveUsageMb,
+    })
   }
 
-  if (req.method === 'GET' && req.path === '/api/dashboard/pending-signatures') {
+  if (req.method === 'GET' && reqPath === '/api/dashboard/pending-signatures') {
     const userId = requireAuth(req, res)
     if (!userId) return
     const db = readDb()
     const pendingCount = db.documents.filter(
-      (item) => item.action === 'uploaded' || item.action === 'pending_signature',
+      (item) =>
+        isOwnedByUser(item, userId) &&
+        (item.action === 'uploaded' || item.action === 'pending_signature'),
     ).length
     return sendJson(res, 200, { pendingCount })
   }
 
-  if (req.method === 'GET' && req.path === '/api/activities/list') {
+  if (req.method === 'GET' && reqPath === '/api/activities/list') {
     const userId = requireAuth(req, res)
     if (!userId) return
     const db = readDb()
-    return sendJson(res, 200, db.activities)
+    const activities = db.activities
+      .filter((item) => isOwnedByUser(item, userId))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return sendJson(res, 200, activities)
   }
 
-  if (req.method === 'GET' && req.path === '/api/documents/recent') {
+  if (req.method === 'GET' && reqPath === '/api/documents/all') {
+    const userId = requireAuth(req, res)
+    if (!userId) return
+    const db = readDb()
+    const documents = db.documents
+      .filter((item) => isOwnedByUser(item, userId))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return sendJson(res, 200, documents)
+  }
+
+  if (req.method === 'GET' && reqPath === '/api/documents/recent') {
     const userId = requireAuth(req, res)
     if (!userId) return
     const db = readDb()
     const recent = [...db.documents]
+      .filter((item) => isOwnedByUser(item, userId))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5)
     return sendJson(res, 200, recent)
   }
 
-  if (req.method === 'POST' && req.path === '/api/documents/upload') {
+  if (req.method === 'POST' && reqPath === '/api/documents/upload') {
     const userId = requireAuth(req, res)
     if (!userId) return
+    const db = readDb()
+    if (!hasRemainingCredits(db, userId)) {
+      return sendJson(res, 400, {
+        message: 'Yetersiz kontor. Islem icin kontor ekleyin.',
+        code: 'insufficient_credits',
+      })
+    }
 
     if (req.headers['content-type']?.includes('multipart/form-data')) {
       return upload.single('file')(req, res, (error) => {
@@ -350,6 +448,7 @@ module.exports = (req, res, next) => {
           fileName: req.file.originalname,
           fileSizeMb: uploadedFileSizeMb,
           previewUrl,
+          ownerId: userId,
         })
 
         return sendJson(res, 201, {
@@ -369,6 +468,7 @@ module.exports = (req, res, next) => {
       fileName,
       fileSizeMb,
       previewUrl: savedPreviewUrl ?? '/mock-files/README.txt',
+      ownerId: userId,
     })
 
     return sendJson(res, 201, {
@@ -377,7 +477,7 @@ module.exports = (req, res, next) => {
     })
   }
 
-  if (req.path === '/api/profile/me') {
+  if (reqPath === '/api/profile/me') {
     const userId = requireAuth(req, res)
     if (!userId) return
 
@@ -398,12 +498,57 @@ module.exports = (req, res, next) => {
     }
   }
 
-  if (req.method === 'DELETE' && /^\/api\/documents\/\d+$/.test(req.path)) {
+  if (req.method === 'POST' && reqPath === '/api/profile/me/password') {
     const userId = requireAuth(req, res)
     if (!userId) return
 
-    const documentId = Number(req.path.split('/').pop())
-    const isDeleted = deleteDocumentById(documentId)
+    const db = readDb()
+    const userIndex = db.users.findIndex((item) => item.id === userId)
+    if (userIndex === -1) {
+      return sendJson(res, 404, { message: 'Profil kaydi bulunamadi.', code: 'profile_not_found' })
+    }
+
+    const user = db.users[userIndex]
+    if (user.password === OAUTH_PASSWORD_MARKER) {
+      return sendJson(res, 400, {
+        message: 'OAuth ile giris yapan hesaplarda sifre degisikligi yapilamaz.',
+        code: 'oauth_password_change_disallowed',
+      })
+    }
+
+    const { currentPassword, newPassword } = req.body ?? {}
+    if (!currentPassword || !newPassword) {
+      return sendJson(res, 400, {
+        message: 'currentPassword ve newPassword alanlari zorunludur.',
+        code: 'missing_password_fields',
+      })
+    }
+
+    if (user.password !== currentPassword) {
+      return sendJson(res, 400, {
+        message: 'Mevcut sifre dogrulanamadi.',
+        code: 'current_password_invalid',
+      })
+    }
+
+    if (String(newPassword).length < PASSWORD_MIN_LENGTH) {
+      return sendJson(res, 400, {
+        message: `Yeni sifre en az ${PASSWORD_MIN_LENGTH} karakter olmalidir.`,
+        code: 'password_min_length',
+      })
+    }
+
+    db.users[userIndex] = { ...user, password: String(newPassword) }
+    writeDb(db)
+    return sendJson(res, 200, { message: 'Sifre basariyla guncellendi.' })
+  }
+
+  if (req.method === 'DELETE' && /^\/api\/documents\/\d+$/.test(reqPath)) {
+    const userId = requireAuth(req, res)
+    if (!userId) return
+
+    const documentId = Number(reqPath.split('/').pop())
+    const isDeleted = deleteDocumentById(documentId, userId)
     if (!isDeleted) {
       return sendJson(res, 404, { message: 'Belge bulunamadi.' })
     }
@@ -411,12 +556,19 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { message: 'Belge silindi.' })
   }
 
-  if (req.method === 'PATCH' && /^\/api\/documents\/\d+\/timestamp$/.test(req.path)) {
+  if (req.method === 'PATCH' && /^\/api\/documents\/\d+\/timestamp$/.test(reqPath)) {
     const userId = requireAuth(req, res)
     if (!userId) return
+    const db = readDb()
+    if (!hasRemainingCredits(db, userId)) {
+      return sendJson(res, 400, {
+        message: 'Yetersiz kontor. Islem icin kontor ekleyin.',
+        code: 'insufficient_credits',
+      })
+    }
 
-    const documentId = Number(req.path.split('/')[3])
-    const document = markDocumentAsTimestamped(documentId)
+    const documentId = Number(reqPath.split('/')[3])
+    const document = markDocumentAsTimestamped(documentId, userId)
     if (!document) {
       return sendJson(res, 404, { message: 'Belge bulunamadi.' })
     }
@@ -424,9 +576,16 @@ module.exports = (req, res, next) => {
     return sendJson(res, 200, { message: 'Belge zaman damgalandi.', document })
   }
 
-  if (req.method === 'POST' && req.path === '/api/timestamp/upload') {
+  if (req.method === 'POST' && reqPath === '/api/timestamp/upload') {
     const userId = requireAuth(req, res)
     if (!userId) return
+    const db = readDb()
+    if (!hasRemainingCredits(db, userId)) {
+      return sendJson(res, 400, {
+        message: 'Yetersiz kontor. Islem icin kontor ekleyin.',
+        code: 'insufficient_credits',
+      })
+    }
 
     if (req.headers['content-type']?.includes('multipart/form-data')) {
       return upload.single('file')(req, res, (error) => {
@@ -447,6 +606,7 @@ module.exports = (req, res, next) => {
           fileName: req.file.originalname,
           fileSizeMb: uploadedFileSizeMb,
           previewUrl,
+          ownerId: userId,
         })
 
         return sendJson(res, 201, {
@@ -465,11 +625,19 @@ module.exports = (req, res, next) => {
       fileName,
       fileSizeMb,
       previewUrl: '/mock-files/README.txt',
+      ownerId: userId,
     })
 
     return sendJson(res, 201, {
       message: 'Zaman damgalama tamamlandi.',
       document,
+    })
+  }
+
+  if (req.method === 'POST' && reqPath === '/api/profile/me/password') {
+    return sendJson(res, 404, {
+      message: 'Sifre degistirme endpointi bulunamadi.',
+      code: 'password_endpoint_not_found',
     })
   }
 

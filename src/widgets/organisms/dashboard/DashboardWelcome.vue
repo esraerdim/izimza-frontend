@@ -1,89 +1,131 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../../features/auth'
-import { dashboardApi, type DashboardDocument } from '../../../features/dashboard/api/dashboard.api'
-import { BaseButton, WaveEmoji } from '../../../shared/ui'
+import { useI18n, I18nT } from 'vue-i18n'
+import { useAuthStore } from '@/features/auth'
+import { useDashboardStore } from '@/features/dashboard'
+import { BaseButton, Icon } from '@/shared/ui'
 
 const authStore = useAuthStore()
+const dashboardStore = useDashboardStore()
 const router = useRouter()
-const pendingCount = ref(0)
-const firstPendingDocument = ref<DashboardDocument | null>(null)
+const { t } = useI18n()
 
-const firstName = computed(() => authStore.user?.firstName || 'Kullanici')
-const pendingMessage = computed(() => {
-  if (pendingCount.value > 0) {
-    return `Bugün ${pendingCount.value} belgeniz imzalanmayı bekliyor.`
-  }
+const firstName = computed(() => authStore.user?.firstName || t('common.user'))
+const pendingCount = computed(() => dashboardStore.pendingCount)
 
-  return 'İmzalanmayı bekleyen bir belgeniz bulunmuyor. Yeni belge yükleyerek süreci başlatabilirsiniz.'
-})
+onMounted(() => dashboardStore.loadPendingCount())
 
-const loadWelcomeData = async () => {
-  try {
-    const [pendingResponse, recentDocuments] = await Promise.all([
-      dashboardApi.getPendingSignatures(),
-      dashboardApi.getRecentDocuments(),
-    ])
-
-    pendingCount.value = pendingResponse.pendingCount
-    firstPendingDocument.value =
-      recentDocuments.find((item) => item.action === 'uploaded' || item.action === 'pending_signature') ?? null
-  } catch {
-    pendingCount.value = 0
-    firstPendingDocument.value = null
-  }
-}
-
-const refreshDashboardData = () => {
-  loadWelcomeData()
-}
-
-onMounted(async () => {
-  await loadWelcomeData()
-  window.addEventListener('dashboard:data:refresh', refreshDashboardData)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('dashboard:data:refresh', refreshDashboardData)
-})
-
-const openArchive = () => {
-  router.push({ name: 'archive' })
-}
+const openArchive = () => router.push({ name: 'archive' })
+const goToSign = () => router.push({ name: 'sign' })
 </script>
 
 <template>
   <section class="dashboard-welcome">
-    <div class="welcome-copy">
-      <p class="welcome-kicker">HOŞ GELDİN</p>
-      <h1 class="welcome-title">Merhaba, {{ firstName }} <WaveEmoji /></h1>
+    <div class="dashboard-welcome__main">
+      <div class="dashboard-welcome__copy">
+        <p class="dashboard-welcome__kicker">{{ t('dashboard.welcome.kicker') }}</p>
+        <h1 class="dashboard-welcome__title">
+          {{ t('dashboard.welcome.title', { name: firstName }) }}
+          <span class="dashboard-welcome__wave" aria-hidden="true">👋</span>
+        </h1>
+      </div>
+      <p class="dashboard-welcome__sub">
+        <I18nT keypath="dashboard.welcome.pendingMessage" :plural="pendingCount" tag="span">
+          <template #count>
+            <strong>{{ pendingCount }}</strong>
+          </template>
+        </I18nT>
+      </p>
     </div>
 
-    <div class="welcome-foot">
-      <p class="sub-title">
-        <template v-if="pendingCount > 0">
-          Bugün <strong>{{ pendingCount }} belge</strong> imzalanmayı bekliyor. Hadi başlayalım.
-        </template>
-        <template v-else>
-          {{ pendingMessage }}
-        </template>
-      </p>
-
-      <div class="welcome-actions">
-        <BaseButton variant="secondary" @click="openArchive">
-          Arşivi Aç
-        </BaseButton>
-        <BaseButton>
-          <span class="btn-with-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 20h4l10-10-4-4L4 16v4z"></path>
-              <path d="M13.5 6.5l4 4"></path>
-            </svg>
-            Yeni İmza
-          </span>
-        </BaseButton>
-      </div>
+    <div class="dashboard-welcome__actions">
+      <BaseButton variant="secondary" @click="openArchive">
+        {{ t('dashboard.welcome.openArchive') }}
+      </BaseButton>
+      <BaseButton @click="goToSign">
+        <Icon name="pen" :size="16" :stroke-width="1.8" />
+        {{ t('dashboard.welcome.newSign') }}
+      </BaseButton>
     </div>
   </section>
 </template>
+
+<style scoped>
+.dashboard-welcome {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 28px;
+  flex-wrap: wrap;
+  padding: 20px 0 22px;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.dashboard-welcome__main {
+  flex: 1 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-welcome__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-welcome__kicker {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--color-brand-primary);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.dashboard-welcome__title {
+  font-size: 24px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.dashboard-welcome__wave {
+  display: inline-block;
+  margin-left: 4px;
+}
+
+.dashboard-welcome__sub {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 56ch;
+}
+
+.dashboard-welcome__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .dashboard-welcome {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 0 18px;
+  }
+
+  .dashboard-welcome__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
+ 

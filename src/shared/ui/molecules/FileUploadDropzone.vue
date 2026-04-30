@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import Icon from '../atoms/Icon.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -11,6 +12,7 @@ const props = withDefaults(
     isPulse?: boolean
     disabled?: boolean
     iconSize?: number
+    fullHeight?: boolean
   }>(),
   {
     accept: '.pdf,.doc,.docx,.png,.jpg,.jpeg',
@@ -18,7 +20,8 @@ const props = withDefaults(
     isLarge: false,
     isPulse: false,
     disabled: false,
-    iconSize: 22,
+    iconSize: 28,
+    fullHeight: false,
   },
 )
 
@@ -62,8 +65,14 @@ const onFileSelected = (event: Event) => {
 
 <template>
   <section
-    class="drop"
-    :class="{ 'drop-large': isLarge, pulse: isPulse, 'is-dragover': isDragOver, 'is-disabled': disabled }"
+    class="dropzone"
+    :class="{
+      'dropzone--large': isLarge,
+      'dropzone--pulse': isPulse,
+      'dropzone--dragover': isDragOver,
+      'dropzone--disabled': disabled,
+      'dropzone--full-height': fullHeight,
+    }"
     role="button"
     tabindex="0"
     @dragover="onDragOver"
@@ -74,17 +83,104 @@ const onFileSelected = (event: Event) => {
     @keydown.enter.prevent="openFilePicker"
     @keydown.space.prevent="openFilePicker"
   >
-    <input ref="fileInputRef" type="file" :accept="accept" hidden :disabled="disabled" @change="onFileSelected" />
-    <div class="drop-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" :width="iconSize" :height="iconSize">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <path d="M17 8l-5-5-5 5"></path>
-        <path d="M12 3v12"></path>
-      </svg>
+    <input
+      ref="fileInputRef"
+      type="file"
+      :accept="accept"
+      hidden
+      :disabled="disabled"
+      @change="onFileSelected"
+    />
+    <div class="dropzone__icon" aria-hidden="true">
+      <Icon name="upload-cloud" :size="iconSize" :stroke-width="1.6" />
     </div>
-    <div class="drop-title">{{ title }}</div>
-    <div class="drop-sub">{{ subtitle }}</div>
-    <p v-if="statusText" class="drop-status">{{ statusText }}</p>
+    <div class="dropzone__title">{{ title }}</div>
+    <div class="dropzone__sub">{{ subtitle }}</div>
+    <p v-if="statusText" class="dropzone__status">{{ statusText }}</p>
     <slot name="footer" />
   </section>
 </template>
+
+<style scoped>
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 24px;
+  border: 2px dashed var(--color-border-dashed);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-empty);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    transform 0.12s ease;
+  outline: none;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible,
+.dropzone--dragover {
+  border-color: var(--color-brand-primary);
+  background: var(--color-brand-tint);
+}
+
+.dropzone--large {
+  padding: 56px 24px;
+}
+
+.dropzone--pulse {
+  animation: dropzone-pulse 1.6s ease-in-out infinite;
+}
+
+.dropzone--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropzone--full-height {
+  height: 100%;
+}
+
+.dropzone__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone__title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: 15px;
+}
+
+.dropzone__sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dropzone__status {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--color-brand-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes dropzone-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.005);
+  }
+}
+</style>

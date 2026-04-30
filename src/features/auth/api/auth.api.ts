@@ -1,4 +1,4 @@
-import { http } from '../../../shared/api'
+import { http } from '@/shared/api'
 
 export type LoginPayload = {
   email: string
@@ -11,12 +11,24 @@ export type AuthUser = {
   firstName: string
   lastName: string
   phone: string
+  isOAuthUser?: boolean
 }
 
 export type OAuthLoginPayload = {
   email: string
   firstName?: string
   lastName?: string
+}
+
+export type UpdateProfilePayload = {
+  firstName: string
+  lastName: string
+  phone: string
+}
+
+export type ChangePasswordPayload = {
+  currentPassword: string
+  newPassword: string
 }
 
 type LoginResponse = {
@@ -41,5 +53,14 @@ export const authApi = {
   async oauthLogin(payload: OAuthLoginPayload): Promise<LoginResponse> {
     const { data } = await http.post<LoginResponse>('/api/auth/oauth-login', payload)
     return data
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+    const { data } = await http.patch<AuthUser>('/api/profile/me', payload)
+    return data
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    await http.post('/api/profile/me/password', payload)
   },
 }

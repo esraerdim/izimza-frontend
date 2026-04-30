@@ -1,7 +1,19 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { authApi, type AuthUser } from '../api/auth.api'
-import { extractApiErrorMessage } from '../../../shared/lib'
+import { AxiosError } from 'axios'
+import {
+  authApi,
+  type AuthUser,
+  type ChangePasswordPayload,
+  type UpdateProfilePayload,
+} from '@/features/auth/api/auth.api'
+import { devError, extractApiErrorMessage } from '@/shared/lib'
+
+const FALLBACK_LOGIN_KEY = 'errors.loginFailed'
+const FALLBACK_OAUTH_KEY = 'errors.oauthLoginFailed'
+const FALLBACK_PROFILE_KEY = 'errors.profileUpdateFailed'
+const FALLBACK_PASSWORD_KEY = 'errors.passwordChangeFailed'
+
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null)
@@ -12,9 +24,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => Boolean(user.value))
 
+  const clearError = () => {
+    errorMessage.value = ''
+  }
+
   const login = async (email: string, password: string) => {
     isLoading.value = true
-    errorMessage.value = ''
+    clearError()
 
     try {
       const response = await authApi.login({ email, password })
@@ -22,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       isInitialized.value = true
       return true
     } catch (error: unknown) {
-      errorMessage.value = extractApiErrorMessage(error, 'Giris yapilirken bir hata olustu.')
+      errorMessage.value = extractApiErrorMessage(error, FALLBACK_LOGIN_KEY)
       return false
     } finally {
       isLoading.value = false
@@ -35,14 +51,14 @@ export const useAuthStore = defineStore('auth', () => {
     lastName?: string
   }) => {
     isLoading.value = true
-    errorMessage.value = ''
+    clearError()
     try {
       const response = await authApi.oauthLogin(payload)
       user.value = response.user
       isInitialized.value = true
       return true
     } catch (error: unknown) {
-      errorMessage.value = extractApiErrorMessage(error, 'OAuth girisi sirasinda bir hata olustu.')
+      errorMessage.value = extractApiErrorMessage(error, FALLBACK_OAUTH_KEY)
       return false
     } finally {
       isLoading.value = false
@@ -55,25 +71,64 @@ export const useAuthStore = defineStore('auth', () => {
     fetchMePromise = (async () => {
       try {
         user.value = await authApi.me()
-        errorMessage.value = ''
-      } catch {
+        clearError()
+      } catch (error) {
+        devError('auth.fetchMe', error)
         user.value = null
       } finally {
         isInitialized.value = true
       }
     })()
 
-    await fetchMePromise
-    fetchMePromise = null
+    try {
+      await fetchMePromise
+    } finally {
+      fetchMePromise = null
+    }
   }
 
   const logout = async () => {
     try {
       await authApi.logout()
+    } catch (error) {
+      devError('auth.logout', error)
     } finally {
       user.value = null
-      errorMessage.value = ''
+      clearError()
       isInitialized.value = true
+    }
+  }
+
+  const updateProfile = async (payload: UpdateProfilePayload) => {
+    isLoading.value = true
+    clearError()
+    try {
+      const updatedUser = await authApi.updateProfile(payload)
+      user.value = updatedUser
+      return true
+    } catch (error: unknown) {
+      errorMessage.value = extractApiErrorMessage(error, FALLBACK_PROFILE_KEY)
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const changePassword = async (payload: ChangePasswordPayload) => {
+    isLoading.value = true
+    clearError()
+    try {
+      await authApi.changePassword(payload)
+      return true
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        errorMessage.value = 'errors.passwordEndpointNotFound'
+        return false
+      }
+      errorMessage.value = extractApiErrorMessage(error, FALLBACK_PASSWORD_KEY)
+      return false
+    } finally {
+      isLoading.value = false
     }
   }
 
@@ -83,9 +138,12 @@ export const useAuthStore = defineStore('auth', () => {
     isInitialized,
     errorMessage,
     isAuthenticated,
+    clearError,
     login,
     loginWithOAuthProfile,
     fetchMe,
     logout,
+    updateProfile,
+    changePassword,
   }
 })
