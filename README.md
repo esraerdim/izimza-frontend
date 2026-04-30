@@ -79,6 +79,5 @@ Proje `main` branch'ine push edildiğinde otomatik olarak GitHub Pages'e deploy 
 
 Preview link formatı:
 
-`https://esraerdim.github.io/izimza-frontend/`
 
 
