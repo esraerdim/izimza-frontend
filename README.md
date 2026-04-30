@@ -69,4 +69,16 @@ src/
 
 Daha detaylı mimari açıklama için: `src/ARCHITECTURE.md`
 
+## GitHub Pages Preview
+
+Proje `main` branch'ine push edildiğinde otomatik olarak GitHub Pages'e deploy olacak şekilde ayarlanmıştır.
+
+- Workflow dosyası: `.github/workflows/deploy-pages.yml`
+- Build sırasında `BASE_PATH` repo adına göre ayarlanır
+- SPA route fallback için `dist/404.html` üretilir
+
+Preview link formatı:
+
+`https://<github-kullanici-adi>.github.io/<repo-adi>/`
+
 
