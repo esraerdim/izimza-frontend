@@ -7,6 +7,7 @@
     />
 
     <UploadCard
+      :title="t('signPage.title')"
       :subtitle="t('signPage.sub')"
       :badge="t('signPage.eSignReady')"
       :drop-title="t('signPage.dropTitle')"

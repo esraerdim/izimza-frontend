@@ -1,5 +1,12 @@
 import BaseButton from './BaseButton.vue'
 
+type BaseButtonStoryArgs = {
+  variant: 'primary' | 'secondary' | 'ghost'
+  size: 'sm' | 'md'
+  disabled: boolean
+  fullWidth: boolean
+}
+
 export default {
   title: 'UI/Atoms/BaseButton',
   component: BaseButton,
@@ -9,7 +16,7 @@ export default {
     disabled: false,
     fullWidth: false,
   },
-  render: (args) => ({
+  render: (args: BaseButtonStoryArgs) => ({
     components: { BaseButton },
     setup: () => ({ args }),
     template: '<BaseButton v-bind="args">Buton</BaseButton>',
